@@ -16,8 +16,9 @@ const {
     BIRTHDAY_CHANNEL
 } = require("../config");
 
-const { EmbedBuilder } = require("discord.js");
+const { AttachmentBuilder, EmbedBuilder } = require("discord.js");
 
+const banner = new AttachmentBuilder("./media/birthdayBanner.png");
 
 
 const { createBirthdayEmbed } = require("../utils/birthdayEmbed");
