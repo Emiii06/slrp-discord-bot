@@ -56,7 +56,7 @@ async function sendModLog(client, message, action, player, reason) {
         })
         .setTimestamp();
 
-    const channel = await client.channels.fetch(LOG_CHANNEL);
+    const channel = await client.channels.fetch(MOD_LOG_CHANNEL);
 
     await channel.send({
         embeds: [embed]
