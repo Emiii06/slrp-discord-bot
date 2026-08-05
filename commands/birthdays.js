@@ -53,7 +53,8 @@ module.exports = async (client, message, args, command) => {
             list.push({
                 id,
                 birthday,
-                days
+                days,
+                nextbirthday
             });
 
         }
