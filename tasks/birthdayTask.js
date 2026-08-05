@@ -1,3 +1,5 @@
+console.log("birthdayTask.js was loaded");
+
 const cron = require("node-cron");
 
 const { getOrdinal } = require("../utils/ordinal");
@@ -23,10 +25,12 @@ const banner = new AttachmentBuilder("./media/birthdayBanner.png");
 
 const { createBirthdayEmbed } = require("../utils/birthdayEmbed");
 
+console.log("BIrthday task loaded");
+const task = cron.schedule()
 module.exports = (client) => {
-
-    cron.schedule("0 9 * * *", async () => {
-
+console.log("Registering birthday cron ")
+    const task = cron.schedule("0 14 * * *", async () => {
+        console.log("Cron fired");
         const today = new Date();
 
         const day = today.getDate();
@@ -45,6 +49,7 @@ module.exports = (client) => {
                 continue;
             }
 
+            console.log("FOUND BIRTHDAY:", id, birthday);
             const member = await client.users
                 .fetch(id)
                 .catch(() => null);
@@ -86,4 +91,5 @@ module.exports = (client) => {
 
     })
 
+    task.start();
 };
