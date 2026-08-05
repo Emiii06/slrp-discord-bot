@@ -1,14 +1,15 @@
-
 const { ALLOWED_CHANNELS } = require("../config");
 
 const moderation = require("../commands/moderation");
 const duty = require("../commands/duty");
-const birthdays = require("../commands/birthdays")
-const leaderboard = require("../commands/leaderboard");
+const birthdays = require("../commands/birthdays");
+const leaderboardFactory = require("../commands/leaderboard");
+const announcements = require("../commands/announcements");
 
 module.exports = (client) => {
 
-    const leaderboard = require("../commands/leaderboard")(client);
+    const leaderboard = leaderboardFactory(client);
+
     client.on("messageCreate", async (message) => {
 
         if (message.author.bot) return;
@@ -25,10 +26,9 @@ module.exports = (client) => {
         await moderation(client, message, args, command);
         await duty(client, message, args, command);
         await leaderboard(message, args, command);
-
-        console.log("Calling birthdays:", command);
         await birthdays(client, message, args, command);
-        console.log("Finished birthdays");
+        await announcements(client, message, args, command);
+
     });
 
 };
