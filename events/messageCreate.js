@@ -4,6 +4,7 @@ const { ALLOWED_CHANNELS } = require("../config");
 const moderation = require("../commands/moderation");
 const duty = require("../commands/duty");
 const birthdays = require("../commands/birthdays")
+const leaderboard = require("../commands/leaderboard");
 
 module.exports = (client) => {
 
