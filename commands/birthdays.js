@@ -70,9 +70,7 @@ module.exports = async (client, message, args, command) => {
 
             if (!member) continue;
 
-            const turns =
-                new Date().getFullYear() - entry.birthday.year;
-
+            const turns = nextBirthday.getFullYear() - entry.birthday.year;
             let when;
 
             if (entry.days === 0) {
