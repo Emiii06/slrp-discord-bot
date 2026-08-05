@@ -26,7 +26,6 @@ const banner = new AttachmentBuilder("./media/birthdayBanner.png");
 const { createBirthdayEmbed } = require("../utils/birthdayEmbed");
 
 console.log("BIrthday task loaded");
-const task = cron.schedule()
 module.exports = (client) => {
 console.log("Registering birthday cron ")
     const task = cron.schedule("0 14 * * *", async () => {

@@ -25,7 +25,10 @@ module.exports = (client) => {
         await moderation(client, message, args, command);
         await duty(client, message, args, command);
         await leaderboard(message, args, command);
+
+        console.log("Calling birthdays:", command);
         await birthdays(client, message, args, command);
+        console.log("Finished birthdays");
     });
 
 };

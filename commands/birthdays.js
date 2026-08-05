@@ -25,7 +25,7 @@ const { isAdmin } = require("../utils/permissions");
 const { createBirthdayEmbed } = require("../utils/birthdayEmbed");
 
 module.exports = async (client, message, args, command) => {
-    console.log("Birthday module:", command);
+    console.log("Birthday command received:", command, args);
     if (command === "!birthdays") {
 
         const today = new Date();
@@ -122,7 +122,7 @@ module.exports = async (client, message, args, command) => {
 
     }
 
-
+    console.log("Checking birthday command...");
     if (command !== "!birthday")
         return;
 
