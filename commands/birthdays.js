@@ -54,7 +54,7 @@ module.exports = async (client, message, args, command) => {
                 id,
                 birthday,
                 days,
-                nextbirthday
+                nextBirthday
             });
 
         }
@@ -71,7 +71,7 @@ module.exports = async (client, message, args, command) => {
 
             if (!member) continue;
 
-            const turns = nextBirthday.getFullYear() - entry.birthday.year;
+            const turns = entry.nextBirthday.getFullYear() - entry.birthday.year;
             let when;
 
             if (entry.days === 0) {
