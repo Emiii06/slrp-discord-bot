@@ -6,7 +6,7 @@ const {
 
 module.exports = async (client, message, args, command) => {
 
-
+    var channel = await client.channels.fetch(ANNOUNCEMENT_CHANNEL);
         if (command === "!sessionstartup") {
         return message.channel.send(
             "🚨 **State Line Roleplay | Session Startup**\n\n" +
