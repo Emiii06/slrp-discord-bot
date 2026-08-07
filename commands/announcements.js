@@ -112,7 +112,7 @@ module.exports = async (client, message, args, command) => {
 
         await message.channel.send({
             content: "@everyone",
-            embeds: [embed]
+            embeds: [PSDutyOnembed]
         });
 
     }
