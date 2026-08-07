@@ -45,7 +45,7 @@ module.exports = async (client, message, args, command) => {
         await message.channel.send({
             embeds: [SessionStartupembed]
         });
-     
+    }
 
     if (command === "!sessionend") {
         const fs = require("fs");
@@ -151,4 +151,4 @@ module.exports = async (client, message, args, command) => {
 
     await message.react("✅");
 
-}};
+};
