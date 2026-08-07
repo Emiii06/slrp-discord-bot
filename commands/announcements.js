@@ -1,12 +1,16 @@
 const { EmbedBuilder } = require("discord.js");
 const {
     ANNOUNCEMENT_CHANNEL,
-    PS_ROLE
+    PS_ROLE,
+    STAFF_ROLES
 } = require("../config");
 
 module.exports = async (client, message, args, command) => {
 
     var channel = await client.channels.fetch(ANNOUNCEMENT_CHANNEL);
+    if(!message.member.roles.cache.has(PS_ROLE) && !message.member.permissions.has(STAFF_ROLES)) {
+        return message.reply("❌ You don't have permission to use this command.");
+    }
     if (command === "!sessionstartup") {
 
         const fs = require("fs");
