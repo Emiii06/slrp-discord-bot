@@ -47,6 +47,7 @@ module.exports = async (client, message, args, command) => {
             .setTimestamp();
 
         await message.channel.send({
+            content: "@here",
             embeds: [SessionStartupembed]
         });
     }
@@ -86,6 +87,7 @@ module.exports = async (client, message, args, command) => {
             })
             .setTimestamp();
         await message.channel.send({
+            content: "@here",
             embeds: [sessionEndembed]
         });
     }
@@ -115,7 +117,7 @@ module.exports = async (client, message, args, command) => {
             .setTimestamp();
 
         await message.channel.send({
-            content: "@everyone",
+            content: "@here",
             embeds: [PSDutyOnembed]
         });
 
@@ -144,7 +146,7 @@ module.exports = async (client, message, args, command) => {
             .setTimestamp();
 
         await message.channel.send({
-            content: "@everyone",
+            content: "@here",
             embeds: [PSDutyOffembed]
         });
     }
