@@ -45,17 +45,7 @@ module.exports = async (client, message, args, command) => {
         await message.channel.send({
             embeds: [SessionStartupembed]
         });
-        return message.channel.send(
-            "🚨 **State Line Roleplay | Session Startup**\n\n" +
-            "This session is now officially beginning. All members are expected to follow server rules, maintain realistic roleplay, and comply with staff instructions at all times.\n\n" +
-            "• 🟢 **Roleplay is now live**\n" +
-            "• 📜 Follow all server rules\n" +
-            "• 🚗 Speed limits are enforced\n" +
-            "• 👮 Follow all staff instructions\n" +
-            "• 🚓 LEO, 🚑 Fire/EMS, 🚧 DOT & Civilians may begin operations\n" +
-            "• 📻 Keep radio communications professional"
-        );
-    }
+     
 
     if (command === "!sessionend") {
         const fs = require("fs");
@@ -161,4 +151,4 @@ module.exports = async (client, message, args, command) => {
 
     await message.react("✅");
 
-};
+}};
