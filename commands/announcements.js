@@ -7,7 +7,16 @@ const {
 } = require("../config");
 
 module.exports = async (client, message, args, command) => {
+        const announcementCommands = [
+        "!sessionstartup",
+        "!sessionend",
+        "!psduty",
+        "!psoffduty"
+    ];
 
+    if (!announcementCommands.includes(command)) {
+        return;
+    }
     const channel = await client.channels
         .fetch(ANNOUNCEMENT_CHANNEL)
         .catch(() => null);
