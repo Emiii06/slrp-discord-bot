@@ -18,6 +18,48 @@ const {
 const activeApplications = new Map();
 const pendingReviews = new Map();
 
+const applicationSessionsPath = path.join(
+  __dirname,
+  "../data/applicationSessions.json"
+);
+
+function loadApplicationSessions() {
+  try {
+    if (!fs.existsSync(applicationSessionsPath)) {
+      fs.writeFileSync(applicationSessionsPath, "{}");
+    }
+
+    const data = JSON.parse(
+      fs.readFileSync(applicationSessionsPath, "utf8")
+    );
+
+    for (const [userId, state] of Object.entries(data)) {
+      activeApplications.set(userId, state);
+    }
+
+    console.log(
+      `Loaded ${activeApplications.size} active application session(s).`
+    );
+  } catch (error) {
+    console.error("APPLICATION SESSION LOAD ERROR:", error);
+  }
+}
+
+function saveApplicationSessions() {
+  try {
+    const data = Object.fromEntries(activeApplications);
+
+    fs.writeFileSync(
+      applicationSessionsPath,
+      JSON.stringify(data, null, 2)
+    );
+  } catch (error) {
+    console.error("APPLICATION SESSION SAVE ERROR:", error);
+  }
+}
+
+loadApplicationSessions();
+
 module.exports = (client) => {
   console.log("INTERACTION CREATE HANDLER REGISTERED");
 
@@ -72,7 +114,7 @@ module.exports = (client) => {
           answers: {},
           currentIndex: 0,
         });
-
+        saveApplicationSessions();
         /*
                 SHOW FIRST QUESTION
                 */
@@ -281,6 +323,8 @@ APPLICATION REVIEW BUTTON
 
         state.currentIndex = index + 1;
 
+        saveApplicationSessions();
+
         /*
 ========================================
 APPLICATION FINISHED
@@ -299,6 +343,7 @@ APPLICATION FINISHED
             await submitApplication(client, interaction, state, application);
 
             activeApplications.delete(userId);
+            saveApplicationSessions();
 
             return interaction.editReply({
               content:
@@ -310,6 +355,7 @@ APPLICATION FINISHED
             console.error("APPLICATION SUBMISSION ERROR:", error);
 
             activeApplications.delete(userId);
+            saveApplicationSessions();
 
             if (interaction.replied || interaction.deferred) {
               return interaction
