@@ -17,14 +17,15 @@ module.exports = async (client, message, args, command) => {
     if (!announcementCommands.includes(command)) {
         return;
     }
+    /*
     const channel = await client.channels
         .fetch(ANNOUNCEMENT_CHANNEL)
         .catch(() => null);
-
+    
     if (!channel) {
         return message.reply("❌ Announcement channel could not be found.");
     }
-
+    */
     if (
         !message.member.roles.cache.has(PS_ROLE) &&
         !message.member.permissions.has(STAFF_ROLES)
