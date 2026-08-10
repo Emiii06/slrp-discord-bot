@@ -1,7 +1,7 @@
 const { EmbedBuilder } = require("discord.js");
 
 const {
-    ANNOUNCEMENT_CHANNEL,
+    SESSION_CHANNEL,
     PS_ROLE,
     STAFF_ROLES
 } = require("../config");
@@ -19,7 +19,7 @@ module.exports = async (client, message, args, command) => {
     }
     
     const channel = await client.channels
-        .fetch(ANNOUNCEMENT_CHANNEL)
+        .fetch(SESSION_CHANNEL)
         .catch(() => null);
     
     if (!channel) {
