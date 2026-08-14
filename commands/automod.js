@@ -324,6 +324,8 @@ const MUTEABLE_TERMS = [
   "stop being weird",
   "nobody wants you here",
   "you don't belong here",
+  "retard",
+  "bastard"
 ];
 
 /*
