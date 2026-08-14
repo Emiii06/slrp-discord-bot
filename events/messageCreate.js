@@ -6,6 +6,7 @@ const duty = require("../commands/duty");
 const birthdays = require("../commands/birthdays");
 const leaderboardFactory = require("../commands/leaderboard");
 const announcements = require("../commands/announcements");
+const automod = require("../commands/automod");
 
 console.log("MESSAGE CREATE MODULE LOADED");
 
@@ -18,6 +19,7 @@ module.exports = (client) => {
     client.on("messageCreate", async (message) => {
 
         if (message.author.bot) return;
+        await automod(client, message);
 
         console.log("MESSAGE RECEIVED:", message.content);
 

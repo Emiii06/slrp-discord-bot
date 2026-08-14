@@ -10,6 +10,9 @@ const {
 
 const applications = require("../commands/applicationData");
 
+const path = require("path");
+const fs = require("fs");
+
 const {
   APPLICATION_RESULTS_CHANNEL,
   APPLICATION_ANNOUNCE_CHANNEL,
@@ -828,6 +831,134 @@ ACCEPT / DENY
           flags: 64,
         });
       }
+
+      
+  /*
+========================================
+AUTOMOD REVIEW
+========================================
+*/
+
+if (
+    interaction.isButton() &&
+    (
+        interaction.customId.startsWith("automod_ban_") ||
+        interaction.customId.startsWith("automod_release_")
+    )
+) {
+
+    const isBan =
+        interaction.customId.startsWith("automod_ban_");
+
+    const prefix = isBan
+        ? "automod_ban_"
+        : "automod_release_";
+
+    const data = interaction.customId.replace(prefix, "");
+
+    const parts = data.split("_");
+
+    const applicantId = parts[0];
+
+    const member = await interaction.guild.members
+        .fetch(applicantId)
+        .catch(() => null);
+
+    if (!member) {
+
+        return interaction.reply({
+            content: "❌ User could not be found.",
+            flags: 64
+        });
+
+    }
+
+    /*
+    ========================================
+    BAN
+    ========================================
+    */
+
+    if (isBan) {
+
+        if (!member.bannable) {
+
+            return interaction.reply({
+                content:
+                    "❌ I cannot ban this user. Check my role position and permissions.",
+                flags: 64
+            });
+
+        }
+
+        try {
+
+            await member.ban({
+                reason:
+                    `AutoMod review approved by ${interaction.user.tag}`
+            });
+
+        } catch (error) {
+
+            console.error(
+                "AUTOMOD BAN ERROR:",
+                error
+            );
+
+            return interaction.reply({
+                content:
+                    "❌ Failed to ban the user.",
+                flags: 64
+            });
+        }
+
+        await interaction.update({
+            content:
+                `🔨 **User banned**\nReviewed by ${interaction.user}`,
+            embeds: interaction.message.embeds,
+            components: []
+        });
+
+        return;
+    }
+
+    /*
+    ========================================
+    RELEASE TIMEOUT
+    ========================================
+    */
+
+    try {
+
+        await member.timeout(
+            null,
+            `AutoMod review dismissed by ${interaction.user.tag}`
+        );
+
+    } catch (error) {
+
+        console.error(
+            "AUTOMOD RELEASE ERROR:",
+            error
+        );
+
+        return interaction.reply({
+            content:
+                "❌ Failed to remove the timeout.",
+            flags: 64
+        });
+
+    }
+
+    await interaction.update({
+        content:
+            `🔓 **Timeout released**\nReviewed by ${interaction.user}`,
+        embeds: interaction.message.embeds,
+        components: []
+    });
+
+    return;
+}
     } catch (error) {
       console.error("INTERACTION ERROR:", error);
 
@@ -842,7 +973,7 @@ ACCEPT / DENY
       }
     }
   });
-};
+}
 
 /*
 ========================================
@@ -1208,4 +1339,4 @@ function truncate(text, maxLength = 1024) {
   }
 
   return text.substring(0, maxLength - 3) + "...";
-}
+};
