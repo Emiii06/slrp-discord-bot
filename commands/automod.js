@@ -192,6 +192,7 @@ const BANNABLE_TERMS = [
   "no one cares about you",
   "you are worthless",
   "you should disappear",
+  "nigga"
 ];
 
 const MUTEABLE_TERMS = [
