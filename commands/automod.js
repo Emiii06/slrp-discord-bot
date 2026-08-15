@@ -192,7 +192,9 @@ const BANNABLE_TERMS = [
   "no one cares about you",
   "you are worthless",
   "you should disappear",
-  "nigga"
+  "nigga",
+  "retard",
+  "bastard"
 ];
 
 const MUTEABLE_TERMS = [
@@ -235,9 +237,6 @@ const MUTEABLE_TERMS = [
   "hey hey hey",
   "ping ping ping",
   "test test test",
-  "spam",
-  "spam spam",
-  "stop spamming",
   "@everyone @everyone",
   "@here @here",
   "who hates who",
@@ -275,8 +274,6 @@ const MUTEABLE_TERMS = [
   "you're so bad",
   "you're terrible",
   "you're awful",
-  "shut up",
-  "just shut up",
   "go away",
   "nobody asked",
   "no one asked",
