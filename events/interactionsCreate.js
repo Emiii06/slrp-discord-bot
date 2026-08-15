@@ -125,9 +125,9 @@ module.exports = (client) => {
         return showQuestion(interaction, interaction.user.id);
       }
 
-      /*
+/*
 ========================================
-CONTINUE APPLICATION BUTTON
+CONTINUE APPLICATION
 ========================================
 */
 
@@ -143,7 +143,7 @@ if (
     if (interaction.user.id !== userId) {
         return interaction.reply({
             content: "❌ This is not your application.",
-            flags: 64,
+            flags: 64
         });
     }
 
@@ -153,28 +153,8 @@ if (
         return interaction.reply({
             content:
                 "❌ Your application session could not be found.\n\n" +
-                "Please start a new application with `!apply`.",
-            flags: 64,
-        });
-    }
-
-    const application = applications[state.type];
-
-    if (!application) {
-        return interaction.reply({
-            content:
-                "❌ Your application type could not be found.",
-            flags: 64,
-        });
-    }
-
-    const fields = getAllFields(application);
-
-    if (state.currentIndex >= fields.length) {
-        return interaction.reply({
-            content:
-                "❌ Your application appears to already be complete.",
-            flags: 64,
+                "Please use `!continueapplication` again.",
+            flags: 64
         });
     }
 

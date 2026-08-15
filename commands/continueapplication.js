@@ -6,6 +6,8 @@ const applicationSessionsPath = path.join(
     "../data/applicationSessions.json"
 );
 
+const applications = require("./applicationData");
+
 module.exports = async (client, message) => {
     try {
         if (!fs.existsSync(applicationSessionsPath)) {
@@ -26,22 +28,39 @@ module.exports = async (client, message) => {
             );
         }
 
-        const applicationNames = {
-            staff: "Staff",
-            police: "Police",
-            fire: "Fire/EMS",
-            dot: "DOT",
-        };
+        const application = applications[session.type];
 
-        const applicationName =
-            applicationNames[session.type] || session.type;
+        if (!application) {
+            console.error(
+                "CONTINUE APPLICATION: Unknown application type:",
+                session.type
+            );
+
+            return message.reply(
+                "❌ Your application type is no longer available. Please contact staff."
+            );
+        }
+
+        const fields = [
+            ...application.information,
+            ...application.questions
+        ];
+
+        const currentIndex = Number(session.currentIndex) || 0;
+
+        if (currentIndex >= fields.length) {
+            return message.reply(
+                "❌ Your application is already complete."
+            );
+        }
 
         return message.reply({
             content:
-                `📋 **${applicationName} Application Found**\n\n` +
-                `You already have an application in progress.\n` +
-                `Your progress has been saved at **Question ${session.currentIndex + 1}**.\n\n` +
-                `Click below to continue where you left off.`,
+                `📋 **${application.name} Application**\n\n` +
+                `Your saved application was found.\n\n` +
+                `**Progress:** ${currentIndex} / ${fields.length} questions answered\n` +
+                `**Next Question:** ${currentIndex + 1}\n\n` +
+                `Click below to continue your application.`,
             components: [
                 {
                     type: 1,
@@ -52,13 +71,14 @@ module.exports = async (client, message) => {
                             label: "Continue Application",
                             style: 1,
                             emoji: {
-                                name: "▶️",
-                            },
-                        },
-                    ],
-                },
-            ],
+                                name: "▶️"
+                            }
+                        }
+                    ]
+                }
+            ]
         });
+
     } catch (error) {
         console.error("CONTINUE APPLICATION ERROR:", error);
 
