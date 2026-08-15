@@ -69,10 +69,52 @@ module.exports = (client) => {
   client.on("interactionCreate", async (interaction) => {
     try {
       /*
+========================================
+CONTINUE APPLICATION
+========================================
+*/
+
+      if (
+        interaction.isButton() &&
+        interaction.customId.startsWith("application_continue_")
+      ) {
+        const userId = interaction.customId.replace(
+          "application_continue_",
+          ""
+        );
+
+        if (interaction.user.id !== userId) {
+          return interaction.reply({
+            content: "❌ This is not your application.",
+            flags: 64
+          });
+        }
+
+        const state = activeApplications.get(userId);
+
+        if (!state) {
+          return interaction.reply({
+            content:
+              "❌ Your application session could not be found.\n\n" +
+              "Please use `!continueapplication` again.",
+            flags: 64
+          });
+        }
+
+        return showQuestion(interaction, userId);
+      }
+
+
+
+
+
+      /*
             ========================================
             APPLICATION DEPARTMENT BUTTON
             ========================================
             */
+
+
 
       if (
         interaction.isButton() &&
@@ -125,41 +167,7 @@ module.exports = (client) => {
         return showQuestion(interaction, interaction.user.id);
       }
 
-/*
-========================================
-CONTINUE APPLICATION
-========================================
-*/
 
-if (
-    interaction.isButton() &&
-    interaction.customId.startsWith("application_continue_")
-) {
-    const userId = interaction.customId.replace(
-        "application_continue_",
-        ""
-    );
-
-    if (interaction.user.id !== userId) {
-        return interaction.reply({
-            content: "❌ This is not your application.",
-            flags: 64
-        });
-    }
-
-    const state = activeApplications.get(userId);
-
-    if (!state) {
-        return interaction.reply({
-            content:
-                "❌ Your application session could not be found.\n\n" +
-                "Please use `!continueapplication` again.",
-            flags: 64
-        });
-    }
-
-    return showQuestion(interaction, userId);
-}
       /*
             ========================================
             ANSWER QUESTION BUTTON
@@ -402,7 +410,7 @@ APPLICATION FINISHED
                     "❌ **There was an error submitting your application.**\n\n" +
                     "Please contact a member of SLRP Leadership and let them know what happened.",
                 })
-                .catch(() => {});
+                .catch(() => { });
             }
 
             return interaction
@@ -412,7 +420,7 @@ APPLICATION FINISHED
                   "Please contact a member of SLRP Leadership and let them know what happened.",
                 flags: 64,
               })
-              .catch(() => {});
+              .catch(() => { });
           }
         }
 
@@ -732,12 +740,12 @@ ACCEPT / DENY
         try {
           await applicant.send(
             "📋 **You received a new message regarding your application.**\n\n" +
-              `**${review.applicationName} Application**\n\n` +
-              `**Result:** ${isAccepted ? "✅ ACCEPTED" : "❌ DENIED"}\n` +
-              `**Score:** ${review.score}/100\n\n` +
-              `${review.messageToApplicant}\n\n` +
-              "━━━━━━━━━━━━━━━━━━━━━━\n" +
-              "State Line Roleplay",
+            `**${review.applicationName} Application**\n\n` +
+            `**Result:** ${isAccepted ? "✅ ACCEPTED" : "❌ DENIED"}\n` +
+            `**Score:** ${review.score}/100\n\n` +
+            `${review.messageToApplicant}\n\n` +
+            "━━━━━━━━━━━━━━━━━━━━━━\n" +
+            "State Line Roleplay",
           );
         } catch (error) {
           dmSent = false;
@@ -867,133 +875,133 @@ ACCEPT / DENY
         });
       }
 
-      
-  /*
-========================================
-AUTOMOD REVIEW
-========================================
-*/
 
-if (
-    interaction.isButton() &&
-    (
-        interaction.customId.startsWith("automod_ban_") ||
-        interaction.customId.startsWith("automod_release_")
-    )
-) {
-
-    const isBan =
-        interaction.customId.startsWith("automod_ban_");
-
-    const prefix = isBan
-        ? "automod_ban_"
-        : "automod_release_";
-
-    const data = interaction.customId.replace(prefix, "");
-
-    const parts = data.split("_");
-
-    const applicantId = parts[0];
-
-    const member = await interaction.guild.members
-        .fetch(applicantId)
-        .catch(() => null);
-
-    if (!member) {
-
-        return interaction.reply({
-            content: "❌ User could not be found.",
-            flags: 64
-        });
-
-    }
-
-    /*
+      /*
     ========================================
-    BAN
+    AUTOMOD REVIEW
     ========================================
     */
 
-    if (isBan) {
+      if (
+        interaction.isButton() &&
+        (
+          interaction.customId.startsWith("automod_ban_") ||
+          interaction.customId.startsWith("automod_release_")
+        )
+      ) {
 
-        if (!member.bannable) {
+        const isBan =
+          interaction.customId.startsWith("automod_ban_");
 
-            return interaction.reply({
-                content:
-                    "❌ I cannot ban this user. Check my role position and permissions.",
-                flags: 64
-            });
+        const prefix = isBan
+          ? "automod_ban_"
+          : "automod_release_";
+
+        const data = interaction.customId.replace(prefix, "");
+
+        const parts = data.split("_");
+
+        const applicantId = parts[0];
+
+        const member = await interaction.guild.members
+          .fetch(applicantId)
+          .catch(() => null);
+
+        if (!member) {
+
+          return interaction.reply({
+            content: "❌ User could not be found.",
+            flags: 64
+          });
 
         }
 
-        try {
+        /*
+        ========================================
+        BAN
+        ========================================
+        */
 
-            await member.ban({
-                reason:
-                    `AutoMod review approved by ${interaction.user.tag}`
+        if (isBan) {
+
+          if (!member.bannable) {
+
+            return interaction.reply({
+              content:
+                "❌ I cannot ban this user. Check my role position and permissions.",
+              flags: 64
             });
 
-        } catch (error) {
+          }
+
+          try {
+
+            await member.ban({
+              reason:
+                `AutoMod review approved by ${interaction.user.tag}`
+            });
+
+          } catch (error) {
 
             console.error(
-                "AUTOMOD BAN ERROR:",
-                error
+              "AUTOMOD BAN ERROR:",
+              error
             );
 
             return interaction.reply({
-                content:
-                    "❌ Failed to ban the user.",
-                flags: 64
+              content:
+                "❌ Failed to ban the user.",
+              flags: 64
             });
+          }
+
+          await interaction.update({
+            content:
+              `🔨 **User banned**\nReviewed by ${interaction.user}`,
+            embeds: interaction.message.embeds,
+            components: []
+          });
+
+          return;
+        }
+
+        /*
+        ========================================
+        RELEASE TIMEOUT
+        ========================================
+        */
+
+        try {
+
+          await member.timeout(
+            null,
+            `AutoMod review dismissed by ${interaction.user.tag}`
+          );
+
+        } catch (error) {
+
+          console.error(
+            "AUTOMOD RELEASE ERROR:",
+            error
+          );
+
+          return interaction.reply({
+            content:
+              "❌ Failed to remove the timeout.",
+            flags: 64
+          });
+
         }
 
         await interaction.update({
-            content:
-                `🔨 **User banned**\nReviewed by ${interaction.user}`,
-            embeds: interaction.message.embeds,
-            components: []
+          content:
+            `🔓 **Timeout released**\nReviewed by ${interaction.user}`,
+          embeds: interaction.message.embeds,
+          components: []
         });
 
         return;
-    }
-
-    /*
-    ========================================
-    RELEASE TIMEOUT
-    ========================================
-    */
-
-    try {
-
-        await member.timeout(
-            null,
-            `AutoMod review dismissed by ${interaction.user.tag}`
-        );
-
-    } catch (error) {
-
-        console.error(
-            "AUTOMOD RELEASE ERROR:",
-            error
-        );
-
-        return interaction.reply({
-            content:
-                "❌ Failed to remove the timeout.",
-            flags: 64
-        });
-
-    }
-
-    await interaction.update({
-        content:
-            `🔓 **Timeout released**\nReviewed by ${interaction.user}`,
-        embeds: interaction.message.embeds,
-        components: []
-    });
-
-    return;
-}
+      }
     } catch (error) {
       console.error("INTERACTION ERROR:", error);
 
@@ -1004,7 +1012,7 @@ if (
               "❌ An unexpected error occurred while processing this interaction.",
             flags: 64,
           })
-          .catch(() => {});
+          .catch(() => { });
       }
     }
   });
