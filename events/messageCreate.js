@@ -7,6 +7,8 @@ const birthdays = require("../commands/birthdays");
 const leaderboardFactory = require("../commands/leaderboard");
 const announcements = require("../commands/announcements");
 const automod = require("../commands/automod");
+const continueApplication = require("../commands/continueapplication");
+
 
 console.log("MESSAGE CREATE MODULE LOADED");
 
@@ -52,9 +54,17 @@ module.exports = (client) => {
             return;
         }
 
+        if (command === "!continueapplication") {
+            await continueApplication(client, message);
+            return;
+        }
+
+
         /*
         NORMAL COMMAND CHANNEL CHECK
         */
+
+
 
         if (!ALLOWED_CHANNELS.includes(message.channel.id)) {
             return;

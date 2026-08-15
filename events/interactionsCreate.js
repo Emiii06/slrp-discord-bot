@@ -126,6 +126,61 @@ module.exports = (client) => {
       }
 
       /*
+========================================
+CONTINUE APPLICATION BUTTON
+========================================
+*/
+
+if (
+    interaction.isButton() &&
+    interaction.customId.startsWith("application_continue_")
+) {
+    const userId = interaction.customId.replace(
+        "application_continue_",
+        ""
+    );
+
+    if (interaction.user.id !== userId) {
+        return interaction.reply({
+            content: "❌ This is not your application.",
+            flags: 64,
+        });
+    }
+
+    const state = activeApplications.get(userId);
+
+    if (!state) {
+        return interaction.reply({
+            content:
+                "❌ Your application session could not be found.\n\n" +
+                "Please start a new application with `!apply`.",
+            flags: 64,
+        });
+    }
+
+    const application = applications[state.type];
+
+    if (!application) {
+        return interaction.reply({
+            content:
+                "❌ Your application type could not be found.",
+            flags: 64,
+        });
+    }
+
+    const fields = getAllFields(application);
+
+    if (state.currentIndex >= fields.length) {
+        return interaction.reply({
+            content:
+                "❌ Your application appears to already be complete.",
+            flags: 64,
+        });
+    }
+
+    return showQuestion(interaction, userId);
+}
+      /*
             ========================================
             ANSWER QUESTION BUTTON
             ========================================
@@ -974,6 +1029,8 @@ if (
     }
   });
 }
+
+module.exports.activeApplications = activeApplications;
 
 /*
 ========================================
