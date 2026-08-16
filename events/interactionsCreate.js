@@ -624,6 +624,10 @@ ACCEPT / DENY
         (interaction.customId.startsWith("application_accept_") ||
           interaction.customId.startsWith("application_deny_"))
       ) {
+
+        await interaction.deferReply({
+          flags: 64
+        });
         const isAccepted = interaction.customId.startsWith(
           "application_accept_",
         );
@@ -642,11 +646,10 @@ ACCEPT / DENY
         const review = pendingReviews.get(applicantId);
 
         if (!review) {
-          return interaction.reply({
+          return interaction.editReply({
             content:
               "❌ This application has not been reviewed yet.\n\n" +
               "Please click **Review Application** first.",
-            flags: 64,
           });
         }
 
@@ -661,9 +664,8 @@ ACCEPT / DENY
           .catch(() => null);
 
         if (!applicant) {
-          return interaction.reply({
+          return interaction.editReply({
             content: "❌ The applicant could not be found.",
-            flags: 64,
           });
         }
 
@@ -867,6 +869,12 @@ ACCEPT / DENY
 
         if (!dmSent) {
           resultMessage += "\n⚠️ The applicant could not be DM'd.";
+        }
+
+        if (interaction.deferred || interaction.replied) {
+          return interaction.editReply({
+            content: resultMessage,
+          });
         }
 
         return interaction.reply({

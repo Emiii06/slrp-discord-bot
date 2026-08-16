@@ -8,7 +8,7 @@ const leaderboardFactory = require("../commands/leaderboard");
 const announcements = require("../commands/announcements");
 const automod = require("../commands/automod");
 const continueApplication = require("../commands/continueapplication");
-
+const testapplication = require("../commands/testapplication")
 
 console.log("MESSAGE CREATE MODULE LOADED");
 
@@ -59,6 +59,10 @@ module.exports = (client) => {
             return;
         }
 
+        if (command === "!testapplication") {
+            await testApplication(client, message, args);
+            return;
+        }
 
         /*
         NORMAL COMMAND CHANNEL CHECK
