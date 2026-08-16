@@ -1,8 +1,7 @@
 const {
-    ModalBuilder,
-    TextInputBuilder,
-    TextInputStyle,
-    ActionRowBuilder
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle
 } = require("discord.js");
 
 module.exports = async (client, message) => {
@@ -12,32 +11,17 @@ module.exports = async (client, message) => {
         );
     }
 
-    const modal = new ModalBuilder()
-        .setCustomId("patchnote_create")
-        .setTitle("Create Patchnote");
+    const button = new ButtonBuilder()
+        .setCustomId("patchnote_open")
+        .setLabel("Create Patchnote")
+        .setEmoji("📝")
+        .setStyle(ButtonStyle.Primary);
 
-    const titleInput = new TextInputBuilder()
-        .setCustomId("patchnote_title")
-        .setLabel("Patchnote Title")
-        .setPlaceholder("Creative - TimeSperre")
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true)
-        .setMaxLength(256);
+    const row = new ActionRowBuilder()
+        .addComponents(button);
 
-    const contentInput = new TextInputBuilder()
-        .setCustomId("patchnote_content")
-        .setLabel("Patchnote")
-        .setPlaceholder(
-            "Write your complete patchnote here..."
-        )
-        .setStyle(TextInputStyle.Paragraph)
-        .setRequired(true)
-        .setMaxLength(4000);
-
-    modal.addComponents(
-        new ActionRowBuilder().addComponents(titleInput),
-        new ActionRowBuilder().addComponents(contentInput)
-    );
-
-    return message.showModal(modal);
+    return message.reply({
+        content: "📝 **Patchnote Creator**\nClick the button below to create a patchnote.",
+        components: [row]
+    });
 };
