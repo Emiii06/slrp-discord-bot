@@ -69,6 +69,12 @@ module.exports = (client) => {
 
   client.on("interactionCreate", async (interaction) => {
     try {
+
+      console.log(
+    "INTERACTION:",
+    interaction.type,
+    interaction.isButton() ? interaction.customId : "not a button"
+);
       /*
 ========================================
 OPEN PATCHNOTE MODAL
