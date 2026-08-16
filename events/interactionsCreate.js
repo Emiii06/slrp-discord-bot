@@ -86,7 +86,7 @@ if (
     const titleInput = new TextInputBuilder()
         .setCustomId("patchnote_title")
         .setLabel("Patchnote Title")
-        .setPlaceholder("Creative - TimeSperre")
+        .setPlaceholder("Patchnote #BlaBla")
         .setStyle(TextInputStyle.Short)
         .setRequired(true)
         .setMaxLength(256);
@@ -143,13 +143,13 @@ if (
         .setTitle(`# ${title}`)
         .setDescription(content)
         .setFooter({
-            text: `Patchnote geschrieben von ${interaction.user.username}`
+            text: `Patchnote written by ${interaction.user.username}`
         })
         .setTimestamp();
 
     await channel.send({
         content:
-            `Patchnote geschrieben von ${interaction.user}`,
+            `Patchnote written by ${interaction.user}`,
         embeds: [embed]
     });
 
