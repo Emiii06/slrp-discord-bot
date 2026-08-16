@@ -6,6 +6,8 @@ const {
   EmbedBuilder,
   ButtonBuilder,
   ButtonStyle,
+  ChannelType,
+  PermissionFlagsBits
 } = require("discord.js");
 
 const applications = require("../commands/applicationData");
@@ -16,6 +18,7 @@ const fs = require("fs");
 const {
   APPLICATION_RESULTS_CHANNEL,
   APPLICATION_ANNOUNCE_CHANNEL,
+  TICKET_SYSTEMS
 } = require("../config");
 
 const activeApplications = new Map();
@@ -68,6 +71,182 @@ module.exports = (client) => {
 
   client.on("interactionCreate", async (interaction) => {
     try {
+
+      /*
+========================================
+TICKET OPEN
+========================================
+*/
+
+if (
+    interaction.isButton() &&
+    interaction.customId.startsWith("ticket_open_")
+) {
+    const type = interaction.customId.replace(
+        "ticket_open_",
+        ""
+    );
+
+    const system = TICKET_SYSTEMS[type];
+
+    if (!system) {
+        return interaction.reply({
+            content: "❌ This ticket system is unavailable.",
+            flags: 64
+        });
+    }
+
+    await interaction.deferReply({
+        flags: 64
+    });
+
+    /*
+    ========================================
+    CHECK EXISTING TICKET
+    ========================================
+    */
+
+    const existingTicket = interaction.guild.channels.cache.find(
+        channel =>
+            channel.type === ChannelType.GuildText &&
+            channel.topic === `ticket:${type}:${interaction.user.id}`
+    );
+
+    if (existingTicket) {
+        return interaction.editReply({
+            content:
+                `❌ You already have an open ticket: ${existingTicket}`
+        });
+    }
+
+    /*
+    ========================================
+    CREATE TICKET
+    ========================================
+    */
+
+    const ticketChannel = await interaction.guild.channels.create({
+        name: `${type === "banAppeals" ? "ban-appeal" : type === "staffHelp" ? "staff-help" : "ticket"}-${interaction.user.username}`
+            .toLowerCase()
+            .replace(/[^a-z0-9-]/g, "")
+            .slice(0, 90),
+
+        type: ChannelType.GuildText,
+
+        parent: system.category,
+
+        topic: `ticket:${type}:${interaction.user.id}`,
+
+        permissionOverwrites: [
+            {
+                id: interaction.guild.id,
+                deny: [
+                    PermissionFlagsBits.ViewChannel
+                ]
+            },
+            {
+                id: interaction.user.id,
+                allow: [
+                    PermissionFlagsBits.ViewChannel,
+                    PermissionFlagsBits.SendMessages,
+                    PermissionFlagsBits.ReadMessageHistory,
+                    PermissionFlagsBits.AttachFiles,
+                    PermissionFlagsBits.EmbedLinks
+                ]
+            },
+            {
+                id: system.staffRole,
+                allow: [
+                    PermissionFlagsBits.ViewChannel,
+                    PermissionFlagsBits.SendMessages,
+                    PermissionFlagsBits.ReadMessageHistory,
+                    PermissionFlagsBits.AttachFiles,
+                    PermissionFlagsBits.EmbedLinks,
+                    PermissionFlagsBits.ManageMessages
+                ]
+            }
+        ]
+    });
+
+    /*
+    ========================================
+    TICKET EMBED
+    ========================================
+    */
+
+    const ticketInfo = {
+        tickets: {
+            title: "🎫 Support Ticket",
+            description:
+                "Thank you for contacting State Line Roleplay support.\n\n" +
+                "Please explain your issue in as much detail as possible."
+        },
+
+        banAppeals: {
+            title: "⚖️ Ban Appeal",
+            description:
+                "Please provide the following information:\n\n" +
+                "• Why you believe the ban was unfair\n" +
+                "• What happened\n" +
+                "• Any relevant evidence\n\n" +
+                "Please be honest and respectful."
+        },
+
+        staffHelp: {
+            title: "🛡️ Staff Help",
+            description:
+                "Please explain what you need assistance with.\n\n" +
+                "Only the appropriate staff team can see this ticket."
+        }
+    };
+
+    const info = ticketInfo[type];
+
+    const embed = new EmbedBuilder()
+        .setColor(
+            type === "banAppeals"
+                ? "#ED4245"
+                : type === "staffHelp"
+                    ? "#FEE75C"
+                    : "#5865F2"
+        )
+        .setTitle(info.title)
+        .setDescription(
+            `Hello ${interaction.user}!\n\n` +
+            info.description
+        )
+        .setFooter({
+            text: "State Line Roleplay • Tickets"
+        })
+        .setTimestamp();
+
+    /*
+    ========================================
+    CLOSE BUTTON
+    ========================================
+    */
+
+    const closeButton = new ButtonBuilder()
+        .setCustomId(`ticket_close_${type}`)
+        .setLabel("Close Ticket")
+        .setEmoji("🔒")
+        .setStyle(ButtonStyle.Danger);
+
+    const row = new ActionRowBuilder()
+        .addComponents(closeButton);
+
+    await ticketChannel.send({
+        content:
+            `${interaction.user} <@&${system.staffRole}>`,
+        embeds: [embed],
+        components: [row]
+    });
+
+    return interaction.editReply({
+        content:
+            `✅ Your ticket has been created: ${ticketChannel}`
+    });
+}
       /*
 ========================================
 CONTINUE APPLICATION
