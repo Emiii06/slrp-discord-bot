@@ -32,6 +32,8 @@ module.exports = async (client, message, args) => {
         );
     }
 
+    const application = applications[type];
+
     let sessions = {};
 
     if (fs.existsSync(applicationSessionsPath)) {
@@ -40,15 +42,26 @@ module.exports = async (client, message, args) => {
         );
     }
 
+    const fields = [
+        ...(application.information || []),
+        ...(application.questions || [])
+    ];
+
+    const answers = {};
+
+    for (const field of fields) {
+        answers[field.id] = "TEST APPLICATION ANSWER";
+    }
+
+    answers.discord_username = member.user.username;
+    answers.roblox_username = "TestRobloxUser";
+    answers.age = "19";
+    answers.timezone = "CET";
+
     sessions[member.id] = {
         type,
-        answers: {
-            discord_username: member.user.username,
-            roblox_username: "TestUser",
-            age: "19",
-            timezone: "CET"
-        },
-        currentIndex: 4
+        answers,
+        currentIndex: fields.length
     };
 
     fs.writeFileSync(
@@ -57,8 +70,10 @@ module.exports = async (client, message, args) => {
     );
 
     return message.reply(
-        `✅ Test **${applications[type].name}** application created for ${member}.\n\n` +
-        `Progress is set to **Question 5**.\n` +
-        `Use \`!continueapplication\` to continue it.`
+        `✅ **Test ${application.name} application created.**\n\n` +
+        `👤 Applicant: ${member}\n` +
+        `📋 Questions: **${fields.length}/${fields.length}**\n` +
+        `✅ Application is marked as **complete**.\n\n` +
+        `You can now test the **Review Application** workflow.`
     );
 };
