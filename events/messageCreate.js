@@ -10,6 +10,7 @@ const automod = require("../commands/automod");
 const continueApplication = require("../commands/continueapplication");
 const testApplication = require("../commands/testapplication");
 const tickets = require("../commands/tickets");
+const patchnotes = require("../commands/patchnote")
 
 console.log("MESSAGE CREATE MODULE LOADED");
 
@@ -60,6 +61,11 @@ module.exports = (client) => {
     if (command === "!ticketpanel") {
       await tickets(client, message, args);
       return;
+    }
+
+    if (command === "!patchnote") {
+    await patchnote(client, message);
+    return;
     }
     /*
         NORMAL COMMAND CHANNEL CHECK

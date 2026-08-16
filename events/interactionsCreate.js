@@ -7,7 +7,7 @@ const {
   ButtonBuilder,
   ButtonStyle,
   ChannelType,
-  PermissionFlagsBits
+  PermissionFlagsBits,
 } = require("discord.js");
 
 const applications = require("../commands/applicationData");
@@ -18,7 +18,8 @@ const fs = require("fs");
 const {
   APPLICATION_RESULTS_CHANNEL,
   APPLICATION_ANNOUNCE_CHANNEL,
-  TICKET_SYSTEMS
+  TICKET_SYSTEMS,
+  PATCHNOTES_CHANNEL,
 } = require("../config");
 
 const activeApplications = new Map();
@@ -26,7 +27,7 @@ const pendingReviews = new Map();
 
 const applicationSessionsPath = path.join(
   __dirname,
-  "../data/applicationSessions.json"
+  "../data/applicationSessions.json",
 );
 
 function loadApplicationSessions() {
@@ -35,16 +36,14 @@ function loadApplicationSessions() {
       fs.writeFileSync(applicationSessionsPath, "{}");
     }
 
-    const data = JSON.parse(
-      fs.readFileSync(applicationSessionsPath, "utf8")
-    );
+    const data = JSON.parse(fs.readFileSync(applicationSessionsPath, "utf8"));
 
     for (const [userId, state] of Object.entries(data)) {
       activeApplications.set(userId, state);
     }
 
     console.log(
-      `Loaded ${activeApplications.size} active application session(s).`
+      `Loaded ${activeApplications.size} active application session(s).`,
     );
   } catch (error) {
     console.error("APPLICATION SESSION LOAD ERROR:", error);
@@ -55,10 +54,7 @@ function saveApplicationSessions() {
   try {
     const data = Object.fromEntries(activeApplications);
 
-    fs.writeFileSync(
-      applicationSessionsPath,
-      JSON.stringify(data, null, 2)
-    );
+    fs.writeFileSync(applicationSessionsPath, JSON.stringify(data, null, 2));
   } catch (error) {
     console.error("APPLICATION SESSION SAVE ERROR:", error);
   }
@@ -74,179 +70,219 @@ module.exports = (client) => {
 
       /*
 ========================================
-TICKET OPEN
+PATCHNOTE CREATE
 ========================================
 */
 
 if (
-    interaction.isButton() &&
-    interaction.customId.startsWith("ticket_open_")
+    interaction.isModalSubmit() &&
+    interaction.customId === "patchnote_create"
 ) {
-    const type = interaction.customId.replace(
-        "ticket_open_",
-        ""
+    const title = interaction.fields.getTextInputValue(
+        "patchnote_title"
     );
 
-    const system = TICKET_SYSTEMS[type];
+    const content = interaction.fields.getTextInputValue(
+        "patchnote_content"
+    );
 
-    if (!system) {
+    const channel = await client.channels
+        .fetch(PATCHNOTES_CHANNEL)
+        .catch(() => null);
+
+    if (!channel) {
         return interaction.reply({
-            content: "❌ This ticket system is unavailable.",
+            content:
+                "❌ The patchnotes channel could not be found.",
             flags: 64
         });
     }
 
-    await interaction.deferReply({
-        flags: 64
+    const embed = new EmbedBuilder()
+        .setColor("#5865F2")
+        .setTitle(`# ${title}`)
+        .setDescription(content)
+        .setFooter({
+            text: `Patchnote geschrieben von ${interaction.user.username}`
+        })
+        .setTimestamp();
+
+    await channel.send({
+        content:
+            `Patchnote geschrieben von ${interaction.user}`,
+        embeds: [embed]
     });
 
-    /*
+    return interaction.reply({
+        content:
+            `✅ Patchnote posted in ${channel}.`,
+        flags: 64
+    });
+}
+
+      /*
+========================================
+TICKET OPEN
+========================================
+*/
+
+      if (
+        interaction.isButton() &&
+        interaction.customId.startsWith("ticket_open_")
+      ) {
+        const type = interaction.customId.replace("ticket_open_", "");
+
+        const system = TICKET_SYSTEMS[type];
+
+        if (!system) {
+          return interaction.reply({
+            content: "❌ This ticket system is unavailable.",
+            flags: 64,
+          });
+        }
+
+        await interaction.deferReply({
+          flags: 64,
+        });
+
+        /*
     ========================================
     CHECK EXISTING TICKET
     ========================================
     */
 
-    const existingTicket = interaction.guild.channels.cache.find(
-        channel =>
+        const existingTicket = interaction.guild.channels.cache.find(
+          (channel) =>
             channel.type === ChannelType.GuildText &&
-            channel.topic === `ticket:${type}:${interaction.user.id}`
-    );
+            channel.topic === `ticket:${type}:${interaction.user.id}`,
+        );
 
-    if (existingTicket) {
-        return interaction.editReply({
-            content:
-                `❌ You already have an open ticket: ${existingTicket}`
-        });
-    }
+        if (existingTicket) {
+          return interaction.editReply({
+            content: `❌ You already have an open ticket: ${existingTicket}`,
+          });
+        }
 
-    /*
+        /*
     ========================================
     CREATE TICKET
     ========================================
     */
 
-    const ticketChannel = await interaction.guild.channels.create({
-        name: `${type === "banAppeals" ? "ban-appeal" : type === "staffHelp" ? "staff-help" : "ticket"}-${interaction.user.username}`
+        const ticketChannel = await interaction.guild.channels.create({
+          name: `${type === "banAppeals" ? "ban-appeal" : type === "staffHelp" ? "staff-help" : "ticket"}-${interaction.user.username}`
             .toLowerCase()
             .replace(/[^a-z0-9-]/g, "")
             .slice(0, 90),
 
-        type: ChannelType.GuildText,
+          type: ChannelType.GuildText,
 
-        parent: system.category,
+          parent: system.category,
 
-        topic: `ticket:${type}:${interaction.user.id}`,
+          topic: `ticket:${type}:${interaction.user.id}`,
 
-        permissionOverwrites: [
+          permissionOverwrites: [
             {
-                id: interaction.guild.id,
-                deny: [
-                    PermissionFlagsBits.ViewChannel
-                ]
+              id: interaction.guild.id,
+              deny: [PermissionFlagsBits.ViewChannel],
             },
             {
-                id: interaction.user.id,
-                allow: [
-                    PermissionFlagsBits.ViewChannel,
-                    PermissionFlagsBits.SendMessages,
-                    PermissionFlagsBits.ReadMessageHistory,
-                    PermissionFlagsBits.AttachFiles,
-                    PermissionFlagsBits.EmbedLinks
-                ]
+              id: interaction.user.id,
+              allow: [
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.AttachFiles,
+                PermissionFlagsBits.EmbedLinks,
+              ],
             },
             {
-                id: system.staffRole,
-                allow: [
-                    PermissionFlagsBits.ViewChannel,
-                    PermissionFlagsBits.SendMessages,
-                    PermissionFlagsBits.ReadMessageHistory,
-                    PermissionFlagsBits.AttachFiles,
-                    PermissionFlagsBits.EmbedLinks,
-                    PermissionFlagsBits.ManageMessages
-                ]
-            }
-        ]
-    });
+              id: system.staffRole,
+              allow: [
+                PermissionFlagsBits.ViewChannel,
+                PermissionFlagsBits.SendMessages,
+                PermissionFlagsBits.ReadMessageHistory,
+                PermissionFlagsBits.AttachFiles,
+                PermissionFlagsBits.EmbedLinks,
+                PermissionFlagsBits.ManageMessages,
+              ],
+            },
+          ],
+        });
 
-    /*
+        /*
     ========================================
     TICKET EMBED
     ========================================
     */
 
-    const ticketInfo = {
-        tickets: {
+        const ticketInfo = {
+          tickets: {
             title: "🎫 Support Ticket",
             description:
-                "Thank you for contacting State Line Roleplay support.\n\n" +
-                "Please explain your issue in as much detail as possible."
-        },
+              "Thank you for contacting State Line Roleplay support.\n\n" +
+              "Please explain your issue in as much detail as possible.",
+          },
 
-        banAppeals: {
+          banAppeals: {
             title: "⚖️ Ban Appeal",
             description:
-                "Please provide the following information:\n\n" +
-                "• Why you believe the ban was unfair\n" +
-                "• What happened\n" +
-                "• Any relevant evidence\n\n" +
-                "Please be honest and respectful."
-        },
+              "Please provide the following information:\n\n" +
+              "• Why you believe the ban was unfair\n" +
+              "• What happened\n" +
+              "• Any relevant evidence\n\n" +
+              "Please be honest and respectful.",
+          },
 
-        staffHelp: {
+          staffHelp: {
             title: "🛡️ Staff Help",
             description:
-                "Please explain what you need assistance with.\n\n" +
-                "Only the appropriate staff team can see this ticket."
-        }
-    };
+              "Please explain what you need assistance with.\n\n" +
+              "Only the appropriate staff team can see this ticket.",
+          },
+        };
 
-    const info = ticketInfo[type];
+        const info = ticketInfo[type];
 
-    const embed = new EmbedBuilder()
-        .setColor(
+        const embed = new EmbedBuilder()
+          .setColor(
             type === "banAppeals"
-                ? "#ED4245"
-                : type === "staffHelp"
-                    ? "#FEE75C"
-                    : "#5865F2"
-        )
-        .setTitle(info.title)
-        .setDescription(
-            `Hello ${interaction.user}!\n\n` +
-            info.description
-        )
-        .setFooter({
-            text: "State Line Roleplay • Tickets"
-        })
-        .setTimestamp();
+              ? "#ED4245"
+              : type === "staffHelp"
+                ? "#FEE75C"
+                : "#5865F2",
+          )
+          .setTitle(info.title)
+          .setDescription(`Hello ${interaction.user}!\n\n` + info.description)
+          .setFooter({
+            text: "State Line Roleplay • Tickets",
+          })
+          .setTimestamp();
 
-    /*
+        /*
     ========================================
     CLOSE BUTTON
     ========================================
     */
 
-    const closeButton = new ButtonBuilder()
-        .setCustomId(`ticket_close_${type}`)
-        .setLabel("Close Ticket")
-        .setEmoji("🔒")
-        .setStyle(ButtonStyle.Danger);
+        const closeButton = new ButtonBuilder()
+          .setCustomId(`ticket_close_${type}`)
+          .setLabel("Close Ticket")
+          .setEmoji("🔒")
+          .setStyle(ButtonStyle.Danger);
 
-    const row = new ActionRowBuilder()
-        .addComponents(closeButton);
+        const row = new ActionRowBuilder().addComponents(closeButton);
 
-    await ticketChannel.send({
-        content:
-            `${interaction.user} <@&${system.staffRole}>`,
-        embeds: [embed],
-        components: [row]
-    });
+        await ticketChannel.send({
+          content: `${interaction.user} <@&${system.staffRole}>`,
+          embeds: [embed],
+          components: [row],
+        });
 
-    return interaction.editReply({
-        content:
-            `✅ Your ticket has been created: ${ticketChannel}`
-    });
-}
+        return interaction.editReply({
+          content: `✅ Your ticket has been created: ${ticketChannel}`,
+        });
+      }
       /*
 ========================================
 CONTINUE APPLICATION
@@ -259,13 +295,13 @@ CONTINUE APPLICATION
       ) {
         const userId = interaction.customId.replace(
           "application_continue_",
-          ""
+          "",
         );
 
         if (interaction.user.id !== userId) {
           return interaction.reply({
             content: "❌ This is not your application.",
-            flags: 64
+            flags: 64,
           });
         }
 
@@ -276,24 +312,18 @@ CONTINUE APPLICATION
             content:
               "❌ Your application session could not be found.\n\n" +
               "Please use `!continueapplication` again.",
-            flags: 64
+            flags: 64,
           });
         }
 
         return showQuestion(interaction, userId);
       }
 
-
-
-
-
       /*
             ========================================
             APPLICATION DEPARTMENT BUTTON
             ========================================
             */
-
-
 
       if (
         interaction.isButton() &&
@@ -345,7 +375,6 @@ CONTINUE APPLICATION
 
         return showQuestion(interaction, interaction.user.id);
       }
-
 
       /*
             ========================================
@@ -589,7 +618,7 @@ APPLICATION FINISHED
                     "❌ **There was an error submitting your application.**\n\n" +
                     "Please contact a member of SLRP Leadership and let them know what happened.",
                 })
-                .catch(() => { });
+                .catch(() => {});
             }
 
             return interaction
@@ -599,7 +628,7 @@ APPLICATION FINISHED
                   "Please contact a member of SLRP Leadership and let them know what happened.",
                 flags: 64,
               })
-              .catch(() => { });
+              .catch(() => {});
           }
         }
 
@@ -803,9 +832,8 @@ ACCEPT / DENY
         (interaction.customId.startsWith("application_accept_") ||
           interaction.customId.startsWith("application_deny_"))
       ) {
-
         await interaction.deferReply({
-          flags: 64
+          flags: 64,
         });
         const isAccepted = interaction.customId.startsWith(
           "application_accept_",
@@ -921,12 +949,12 @@ ACCEPT / DENY
         try {
           await applicant.send(
             "📋 **You received a new message regarding your application.**\n\n" +
-            `**${review.applicationName} Application**\n\n` +
-            `**Result:** ${isAccepted ? "✅ ACCEPTED" : "❌ DENIED"}\n` +
-            `**Score:** ${review.score}/100\n\n` +
-            `${review.messageToApplicant}\n\n` +
-            "━━━━━━━━━━━━━━━━━━━━━━\n" +
-            "State Line Roleplay",
+              `**${review.applicationName} Application**\n\n` +
+              `**Result:** ${isAccepted ? "✅ ACCEPTED" : "❌ DENIED"}\n` +
+              `**Score:** ${review.score}/100\n\n` +
+              `${review.messageToApplicant}\n\n` +
+              "━━━━━━━━━━━━━━━━━━━━━━\n" +
+              "State Line Roleplay",
           );
         } catch (error) {
           dmSent = false;
@@ -1062,7 +1090,6 @@ ACCEPT / DENY
         });
       }
 
-
       /*
     ========================================
     AUTOMOD REVIEW
@@ -1071,18 +1098,12 @@ ACCEPT / DENY
 
       if (
         interaction.isButton() &&
-        (
-          interaction.customId.startsWith("automod_ban_") ||
-          interaction.customId.startsWith("automod_release_")
-        )
+        (interaction.customId.startsWith("automod_ban_") ||
+          interaction.customId.startsWith("automod_release_"))
       ) {
+        const isBan = interaction.customId.startsWith("automod_ban_");
 
-        const isBan =
-          interaction.customId.startsWith("automod_ban_");
-
-        const prefix = isBan
-          ? "automod_ban_"
-          : "automod_release_";
+        const prefix = isBan ? "automod_ban_" : "automod_release_";
 
         const data = interaction.customId.replace(prefix, "");
 
@@ -1095,12 +1116,10 @@ ACCEPT / DENY
           .catch(() => null);
 
         if (!member) {
-
           return interaction.reply({
             content: "❌ User could not be found.",
-            flags: 64
+            flags: 64,
           });
-
         }
 
         /*
@@ -1110,43 +1129,31 @@ ACCEPT / DENY
         */
 
         if (isBan) {
-
           if (!member.bannable) {
-
             return interaction.reply({
               content:
                 "❌ I cannot ban this user. Check my role position and permissions.",
-              flags: 64
+              flags: 64,
             });
-
           }
 
           try {
-
             await member.ban({
-              reason:
-                `AutoMod review approved by ${interaction.user.tag}`
+              reason: `AutoMod review approved by ${interaction.user.tag}`,
             });
-
           } catch (error) {
-
-            console.error(
-              "AUTOMOD BAN ERROR:",
-              error
-            );
+            console.error("AUTOMOD BAN ERROR:", error);
 
             return interaction.reply({
-              content:
-                "❌ Failed to ban the user.",
-              flags: 64
+              content: "❌ Failed to ban the user.",
+              flags: 64,
             });
           }
 
           await interaction.update({
-            content:
-              `🔨 **User banned**\nReviewed by ${interaction.user}`,
+            content: `🔨 **User banned**\nReviewed by ${interaction.user}`,
             embeds: interaction.message.embeds,
-            components: []
+            components: [],
           });
 
           return;
@@ -1159,32 +1166,23 @@ ACCEPT / DENY
         */
 
         try {
-
           await member.timeout(
             null,
-            `AutoMod review dismissed by ${interaction.user.tag}`
+            `AutoMod review dismissed by ${interaction.user.tag}`,
           );
-
         } catch (error) {
-
-          console.error(
-            "AUTOMOD RELEASE ERROR:",
-            error
-          );
+          console.error("AUTOMOD RELEASE ERROR:", error);
 
           return interaction.reply({
-            content:
-              "❌ Failed to remove the timeout.",
-            flags: 64
+            content: "❌ Failed to remove the timeout.",
+            flags: 64,
           });
-
         }
 
         await interaction.update({
-          content:
-            `🔓 **Timeout released**\nReviewed by ${interaction.user}`,
+          content: `🔓 **Timeout released**\nReviewed by ${interaction.user}`,
           embeds: interaction.message.embeds,
-          components: []
+          components: [],
         });
 
         return;
@@ -1199,11 +1197,11 @@ ACCEPT / DENY
               "❌ An unexpected error occurred while processing this interaction.",
             flags: 64,
           })
-          .catch(() => { });
+          .catch(() => {});
       }
     }
   });
-}
+};
 
 module.exports.activeApplications = activeApplications;
 
@@ -1343,12 +1341,12 @@ async function submitApplication(client, interaction, state, application) {
     .setTitle(`${application.emoji} New ${application.name} Application`)
     .setDescription(
       `A new application has been submitted by ${interaction.user}.\n\n` +
-      `👤 **Applicant Information**`
+        `👤 **Applicant Information**`,
     )
     .setThumbnail(
       interaction.user.displayAvatarURL({
         size: 256,
-      })
+      }),
     )
     .setTimestamp();
 
@@ -1356,17 +1354,11 @@ async function submitApplication(client, interaction, state, application) {
   let infoFieldCount = 0;
 
   for (const field of application.information || []) {
-    const value = truncate(
-      answers[field.id] || "No answer provided",
-      900
-    );
+    const value = truncate(answers[field.id] || "No answer provided", 900);
 
     const fieldSize = field.label.length + value.length;
 
-    if (
-      infoSize + fieldSize > 4500 ||
-      infoFieldCount >= 5
-    ) {
+    if (infoSize + fieldSize > 4500 || infoFieldCount >= 5) {
       infoEmbeds.push(currentInfoEmbed);
 
       currentInfoEmbed = new EmbedBuilder()
@@ -1405,9 +1397,7 @@ async function submitApplication(client, interaction, state, application) {
 
   let currentEmbed = new EmbedBuilder()
     .setColor(application.color)
-    .setTitle(
-      `${application.emoji} ${application.name} Application Questions`
-    )
+    .setTitle(`${application.emoji} ${application.name} Application Questions`)
     .setFooter({
       text: "State Line Roleplay • Applications",
     })
@@ -1419,18 +1409,12 @@ async function submitApplication(client, interaction, state, application) {
   for (let i = 0; i < application.questions.length; i++) {
     const question = application.questions[i];
 
-    const answer =
-      answers[question.id] ||
-      "No answer provided";
+    const answer = answers[question.id] || "No answer provided";
 
-    const questionTitle =
-      question.label ||
-      `Question ${i + 1}`;
+    const questionTitle = question.label || `Question ${i + 1}`;
 
     const fullQuestion =
-      question.question ||
-      question.label ||
-      "Unknown Question";
+      question.question || question.label || "Unknown Question";
 
     /*
     ========================================
@@ -1443,13 +1427,9 @@ async function submitApplication(client, interaction, state, application) {
       `**Answer:**\n` +
       truncate(answer, 450);
 
-    const fieldName =
-      `Question ${i + 1}\n` +
-      truncate(questionTitle, 180);
+    const fieldName = `Question ${i + 1}\n` + truncate(questionTitle, 180);
 
-    const fieldSize =
-      fieldName.length +
-      questionText.length;
+    const fieldSize = fieldName.length + questionText.length;
 
     /*
     ========================================
@@ -1457,16 +1437,13 @@ async function submitApplication(client, interaction, state, application) {
     ========================================
     */
 
-    if (
-      currentSize + fieldSize > 4500 ||
-      fieldCount >= 5
-    ) {
+    if (currentSize + fieldSize > 4500 || fieldCount >= 5) {
       answerEmbeds.push(currentEmbed);
 
       currentEmbed = new EmbedBuilder()
         .setColor(application.color)
         .setTitle(
-          `${application.emoji} ${application.name} Application Questions`
+          `${application.emoji} ${application.name} Application Questions`,
         )
         .setFooter({
           text: "State Line Roleplay • Applications",
@@ -1499,28 +1476,22 @@ async function submitApplication(client, interaction, state, application) {
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId(
-        `application_review_${interaction.user.id}`
-      )
+      .setCustomId(`application_review_${interaction.user.id}`)
       .setLabel("Review Application")
       .setEmoji("📝")
       .setStyle(ButtonStyle.Primary),
 
     new ButtonBuilder()
-      .setCustomId(
-        `application_accept_${interaction.user.id}`
-      )
+      .setCustomId(`application_accept_${interaction.user.id}`)
       .setLabel("Accept")
       .setEmoji("✅")
       .setStyle(ButtonStyle.Success),
 
     new ButtonBuilder()
-      .setCustomId(
-        `application_deny_${interaction.user.id}`
-      )
+      .setCustomId(`application_deny_${interaction.user.id}`)
       .setLabel("Deny")
       .setEmoji("❌")
-      .setStyle(ButtonStyle.Danger)
+      .setStyle(ButtonStyle.Danger),
   );
 
   /*
@@ -1542,8 +1513,7 @@ async function submitApplication(client, interaction, state, application) {
   */
 
   for (let i = 0; i < answerEmbeds.length; i++) {
-    const isLast =
-      i === answerEmbeds.length - 1;
+    const isLast = i === answerEmbeds.length - 1;
 
     await channel.send({
       embeds: [answerEmbeds[i]],
@@ -1551,7 +1521,6 @@ async function submitApplication(client, interaction, state, application) {
     });
   }
 }
-
 
 /*
 ========================================
@@ -1571,4 +1540,4 @@ function truncate(text, maxLength = 1024) {
   }
 
   return text.substring(0, maxLength - 3) + "...";
-};
+}
