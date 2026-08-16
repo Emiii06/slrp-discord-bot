@@ -318,158 +318,234 @@ CLOSE TICKET
 ========================================
 */
 
-        if (
-          interaction.isButton() &&
-          interaction.customId.startsWith("ticket_close_")
-        ) {
-          const type = interaction.customId.replace("ticket_close_", "");
+if (
+    interaction.isButton() &&
+    interaction.customId.startsWith("ticket_close_")
+) {
+    console.log(
+        "TICKET CLOSE CLICKED:",
+        interaction.customId,
+        interaction.user.tag
+    );
 
-          const system = TICKET_SYSTEMS[type];
-
-          if (!system) {
-            return interaction.reply({
-              content: "❌ This ticket system is unavailable.",
-              flags: 64,
-            });
-          }
-
-          /*
+    /*
     ========================================
-    PERMISSION CHECK
+    ACKNOWLEDGE INTERACTION IMMEDIATELY
     ========================================
     */
 
-          if (!interaction.member.roles.cache.has(system.staffRole)) {
-            return interaction.reply({
-              content: "❌ Only ticket staff can close this ticket.",
-              flags: 64,
-            });
-          }
-
-          await interaction.deferReply({
+    try {
+        await interaction.deferReply({
             flags: 64,
-          });
+        });
+    } catch (error) {
+        console.error(
+            "FAILED TO DEFER TICKET CLOSE:",
+            error
+        );
 
-          const ticketChannel = interaction.channel;
+        return;
+    }
 
-          /*
-    ========================================
-    FIND TICKET CREATOR
-    ========================================
-    */
+    try {
+        const type = interaction.customId.replace(
+            "ticket_close_",
+            ""
+        );
 
-          let creator = null;
+        console.log("TICKET CLOSE TYPE:", type);
 
-          if (ticketChannel.topic) {
-            const match = ticketChannel.topic.match(/^ticket:[^:]+:(\d+)$/);
+        const system = TICKET_SYSTEMS[type];
+
+        if (!system) {
+            return interaction.editReply({
+                content:
+                    "❌ This ticket system is unavailable.",
+            });
+        }
+
+        /*
+        ========================================
+        PERMISSION CHECK
+        ========================================
+        */
+
+        if (
+            !interaction.member.roles.cache.has(
+                system.staffRole
+            )
+        ) {
+            return interaction.editReply({
+                content:
+                    "❌ Only ticket staff can close this ticket.",
+            });
+        }
+
+        console.log("TICKET CLOSE: Permission OK");
+
+        const ticketChannel = interaction.channel;
+
+        /*
+        ========================================
+        FIND CREATOR
+        ========================================
+        */
+
+        let creator = null;
+
+        if (ticketChannel.topic) {
+            const match = ticketChannel.topic.match(
+                /^ticket:[^:]+:(\d+)$/
+            );
 
             if (match) {
-              creator = await client.users.fetch(match[1]).catch(() => null);
+                creator = await client.users
+                    .fetch(match[1])
+                    .catch(() => null);
             }
-          }
+        }
 
-          /*
-    ========================================
-    CREATE TRANSCRIPT
-    ========================================
-    */
+        console.log(
+            "TICKET CLOSE: Creator:",
+            creator?.tag || "Unknown"
+        );
 
-          let transcript;
+        /*
+        ========================================
+        CREATE TRANSCRIPT
+        ========================================
+        */
 
-          try {
-            transcript = await createTicketTranscript(ticketChannel, {
-              ticketType: system.name,
-              creator,
-              closedBy: interaction.user,
-            });
-          } catch (error) {
-            console.error("Failed to create ticket transcript:", error);
+        console.log(
+            "TICKET CLOSE: Creating transcript..."
+        );
 
+        const transcript =
+            await createTicketTranscript(
+                ticketChannel,
+                {
+                    ticketType: system.name,
+                    creator,
+                    closedBy: interaction.user,
+                }
+            );
+
+        console.log(
+            "TICKET CLOSE: Transcript created"
+        );
+
+        /*
+        ========================================
+        TRANSCRIPT CHANNEL
+        ========================================
+        */
+
+        const transcriptChannel =
+            await client.channels
+                .fetch(TICKET_TRANSCRIPT_CHANNEL)
+                .catch(() => null);
+
+        if (!transcriptChannel) {
             return interaction.editReply({
-              content:
-                "❌ Failed to create the ticket transcript. The ticket was NOT deleted.",
+                content:
+                    "❌ Transcript channel could not be found. The ticket was NOT deleted.",
             });
-          }
+        }
 
-          /*
-    ========================================
-    TRANSCRIPT CHANNEL
-    ========================================
-    */
+        console.log(
+            "TICKET CLOSE: Transcript channel found"
+        );
 
-          const transcriptChannel = await client.channels
-            .fetch(TICKET_TRANSCRIPT_CHANNEL)
-            .catch(() => null);
+        /*
+        ========================================
+        SEND TRANSCRIPT
+        ========================================
+        */
 
-          if (!transcriptChannel) {
-            return interaction.editReply({
-              content:
-                "❌ Transcript channel could not be found. The ticket was NOT deleted.",
-            });
-          }
+        const transcriptEmbed =
+            new EmbedBuilder()
+                .setColor("#5865F2")
+                .setTitle("🔒 Ticket Closed")
+                .addFields(
+                    {
+                        name: "Ticket",
+                        value: `\`${ticketChannel.name}\``,
+                        inline: true,
+                    },
+                    {
+                        name: "Type",
+                        value: system.name,
+                        inline: true,
+                    },
+                    {
+                        name: "Created By",
+                        value: creator
+                            ? `<@${creator.id}>`
+                            : "Unknown",
+                        inline: true,
+                    },
+                    {
+                        name: "Closed By",
+                        value: `<@${interaction.user.id}>`,
+                        inline: true,
+                    }
+                )
+                .setTimestamp();
 
-          /*
-    ========================================
-    TRANSCRIPT EMBED
-    ========================================
-    */
-
-          const transcriptEmbed = new EmbedBuilder()
-            .setColor("#5865F2")
-            .setTitle("🔒 Ticket Closed")
-            .addFields(
-              {
-                name: "Ticket",
-                value: `\`${ticketChannel.name}\``,
-                inline: true,
-              },
-              {
-                name: "Type",
-                value: system.name,
-                inline: true,
-              },
-              {
-                name: "Created By",
-                value: creator ? `<@${creator.id}>` : "Unknown",
-                inline: true,
-              },
-              {
-                name: "Closed By",
-                value: `<@${interaction.user.id}>`,
-                inline: true,
-              },
-            )
-            .setTimestamp();
-
-          /*
-    ========================================
-    SEND TRANSCRIPT
-    ========================================
-    */
-
-          await transcriptChannel.send({
+        await transcriptChannel.send({
             embeds: [transcriptEmbed],
             files: [
-              {
-                attachment: transcript,
-                name: `${ticketChannel.name}.pdf`,
-              },
+                {
+                    attachment: transcript,
+                    name: `${ticketChannel.name}.pdf`,
+                },
             ],
-          });
+        });
 
-          /*
-    ========================================
-    DELETE TICKET
-    ========================================
-    */
+        console.log(
+            "TICKET CLOSE: Transcript sent"
+        );
 
-          await interaction.editReply({
-            content: "🔒 Ticket closed and transcript archived.",
-          });
+        /*
+        ========================================
+        DELETE TICKET
+        ========================================
+        */
 
-          await ticketChannel.delete("Ticket closed and transcript archived.");
+        await interaction.editReply({
+            content:
+                "🔒 Ticket closed and transcript archived.",
+        });
+
+        console.log(
+            "TICKET CLOSE: Deleting channel..."
+        );
+
+        await ticketChannel.delete(
+            "Ticket closed and transcript archived."
+        );
+
+    } catch (error) {
+        console.error(
+            "TICKET CLOSE ERROR:",
+            error
+        );
+
+        try {
+            await interaction.editReply({
+                content:
+                    "❌ Something went wrong while closing this ticket. The ticket was NOT deleted.",
+            });
+        } catch (replyError) {
+            console.error(
+                "FAILED TO EDIT CLOSE REPLY:",
+                replyError
+            );
         }
-      }
+    }
+}
+
+      }       
       /*
 ========================================
 CONTINUE APPLICATION
