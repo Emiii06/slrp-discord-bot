@@ -21,9 +21,11 @@ module.exports = async (client, message, args) => {
         );
     }
 
-    const type = (args[1] || "staff").toLowerCase();
+    const type = args
+        .map((arg) => arg.toLowerCase())
+        .find((arg) => applications[arg]);
 
-    if (!applications[type]) {
+    if (!type) {
         return message.reply(
             "❌ Invalid application type.\n\n" +
             "Available types: `staff`, `police`, `fire`, `ems`, `dot`"
