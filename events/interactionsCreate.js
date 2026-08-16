@@ -20,7 +20,7 @@ const {
   APPLICATION_ANNOUNCE_CHANNEL,
   TICKET_SYSTEMS,
   PATCHNOTES_CHANNEL,
-  TICKET_TRANSCRIPT_CHANNEL
+  TICKET_TRANSCRIPT_CHANNEL,
 } = require("../config");
 
 const activeApplications = new Map();
@@ -69,98 +69,85 @@ module.exports = (client) => {
 
   client.on("interactionCreate", async (interaction) => {
     try {
-
-
       /*
 ========================================
 OPEN PATCHNOTE MODAL
 ========================================
 */
 
-if (
-    interaction.isButton() &&
-    interaction.customId === "patchnote_open"
-) {
-    const modal = new ModalBuilder()
-        .setCustomId("patchnote_create")
-        .setTitle("Create Patchnote");
+      if (interaction.isButton() && interaction.customId === "patchnote_open") {
+        const modal = new ModalBuilder()
+          .setCustomId("patchnote_create")
+          .setTitle("Create Patchnote");
 
-    const titleInput = new TextInputBuilder()
-        .setCustomId("patchnote_title")
-        .setLabel("Patchnote Title")
-        .setPlaceholder("Patchnote #BlaBla")
-        .setStyle(TextInputStyle.Short)
-        .setRequired(true)
-        .setMaxLength(256);
+        const titleInput = new TextInputBuilder()
+          .setCustomId("patchnote_title")
+          .setLabel("Patchnote Title")
+          .setPlaceholder("Patchnote #BlaBla")
+          .setStyle(TextInputStyle.Short)
+          .setRequired(true)
+          .setMaxLength(256);
 
-    const contentInput = new TextInputBuilder()
-        .setCustomId("patchnote_content")
-        .setLabel("Patchnote")
-        .setPlaceholder(
-            "Write your complete patchnote here..."
-        )
-        .setStyle(TextInputStyle.Paragraph)
-        .setRequired(true)
-        .setMaxLength(4000);
+        const contentInput = new TextInputBuilder()
+          .setCustomId("patchnote_content")
+          .setLabel("Patchnote")
+          .setPlaceholder("Write your complete patchnote here...")
+          .setStyle(TextInputStyle.Paragraph)
+          .setRequired(true)
+          .setMaxLength(4000);
 
-    modal.addComponents(
-        new ActionRowBuilder().addComponents(titleInput),
-        new ActionRowBuilder().addComponents(contentInput)
-    );
+        modal.addComponents(
+          new ActionRowBuilder().addComponents(titleInput),
+          new ActionRowBuilder().addComponents(contentInput),
+        );
 
-    return interaction.showModal(modal);
-}
+        return interaction.showModal(modal);
+      }
       /*
 ========================================
 PATCHNOTE CREATE
 ========================================
 */
 
-if (
-    interaction.isModalSubmit() &&
-    interaction.customId === "patchnote_create"
-) {
-    const title = interaction.fields.getTextInputValue(
-        "patchnote_title"
-    );
+      if (
+        interaction.isModalSubmit() &&
+        interaction.customId === "patchnote_create"
+      ) {
+        const title = interaction.fields.getTextInputValue("patchnote_title");
 
-    const content = interaction.fields.getTextInputValue(
-        "patchnote_content"
-    );
+        const content =
+          interaction.fields.getTextInputValue("patchnote_content");
 
-    const channel = await client.channels
-        .fetch(PATCHNOTES_CHANNEL)
-        .catch(() => null);
+        const channel = await client.channels
+          .fetch(PATCHNOTES_CHANNEL)
+          .catch(() => null);
 
-    if (!channel) {
-        return interaction.reply({
-            content:
-                "❌ The patchnotes channel could not be found.",
-            flags: 64
+        if (!channel) {
+          return interaction.reply({
+            content: "❌ The patchnotes channel could not be found.",
+            flags: 64,
+          });
+        }
+
+        const embed = new EmbedBuilder()
+          .setColor("#5865F2")
+          .setTitle(`# ${title}`)
+          .setDescription(content)
+          .setFooter({
+            text: `Patchnote written by ${interaction.user.username}`,
+          })
+          .setTimestamp();
+
+        await channel.send({
+          content: `Patchnote written by ${interaction.user}`,
+          embeds: [embed],
         });
-    }
 
-    const embed = new EmbedBuilder()
-        .setColor("#5865F2")
-        .setTitle(`# ${title}`)
-        .setDescription(content)
-        .setFooter({
-            text: `Patchnote written by ${interaction.user.username}`
-        })
-        .setTimestamp();
-
-    await channel.send({
-        content:
-            `Patchnote written by ${interaction.user}`,
-        embeds: [embed]
-    });
-
-    return interaction.reply({
-        content:
-            `✅ Patchnote posted in ${channel}.`,
-        flags: 64
-    });
-}
+        return interaction.reply({
+          content: `✅ Patchnote posted in ${channel}.`,
+          flags: 64,
+        });
+      }
 
       /*
 ========================================
@@ -301,173 +288,188 @@ TICKET OPEN
           })
           .setTimestamp();
 
-      /*
-========================================
-TICKET CLOSE
-========================================
-*/
-
-if (
-    interaction.isButton() &&
-    interaction.customId.startsWith("ticket_close_")
-) {
-    const type = interaction.customId.replace(
-        "ticket_close_",
-        ""
-    );
-
-    const system = TICKET_SYSTEMS[type];
-
-    if (!system) {
-        return interaction.reply({
-            content: "❌ This ticket system is unavailable.",
-            flags: 64
-        });
-    }
-
-    await interaction.deferReply({
-        flags: 64
-    });
-
-    const ticketChannel = interaction.channel;
-
-    /*
+        /*
     ========================================
-    GET CREATOR
+    CLOSE BUTTON
     ========================================
     */
 
-    let creator = null;
+        const closeButton = new ButtonBuilder()
+          .setCustomId(`ticket_close_${type}`)
+          .setLabel("Close Ticket")
+          .setEmoji("🔒")
+          .setStyle(ButtonStyle.Danger);
 
-    if (ticketChannel.topic) {
-        const match = ticketChannel.topic.match(
-            /^ticket:[^:]+:(\d+)$/
-        );
+        const row = new ActionRowBuilder().addComponents(closeButton);
 
-        if (match) {
-            creator = await client.users
-                .fetch(match[1])
-                .catch(() => null);
-        }
-    }
+        await ticketChannel.send({
+          content: `${interaction.user} <@&${system.staffRole}>`,
+          embeds: [embed],
+          components: [row],
+        });
 
-    /*
+        return interaction.editReply({
+          content: `✅ Your ticket has been created: ${ticketChannel}`,
+        });
+
+        /*
+========================================
+CLOSE TICKET
+========================================
+*/
+
+        if (
+          interaction.isButton() &&
+          interaction.customId.startsWith("ticket_close_")
+        ) {
+          const type = interaction.customId.replace("ticket_close_", "");
+
+          const system = TICKET_SYSTEMS[type];
+
+          if (!system) {
+            return interaction.reply({
+              content: "❌ This ticket system is unavailable.",
+              flags: 64,
+            });
+          }
+
+          /*
+    ========================================
+    PERMISSION CHECK
+    ========================================
+    */
+
+          if (!interaction.member.roles.cache.has(system.staffRole)) {
+            return interaction.reply({
+              content: "❌ Only ticket staff can close this ticket.",
+              flags: 64,
+            });
+          }
+
+          await interaction.deferReply({
+            flags: 64,
+          });
+
+          const ticketChannel = interaction.channel;
+
+          /*
+    ========================================
+    FIND TICKET CREATOR
+    ========================================
+    */
+
+          let creator = null;
+
+          if (ticketChannel.topic) {
+            const match = ticketChannel.topic.match(/^ticket:[^:]+:(\d+)$/);
+
+            if (match) {
+              creator = await client.users.fetch(match[1]).catch(() => null);
+            }
+          }
+
+          /*
     ========================================
     CREATE TRANSCRIPT
     ========================================
     */
 
-    let transcript;
+          let transcript;
 
-    try {
-        transcript = await createTicketTranscript(
-            ticketChannel,
-            {
-                ticketType: system.name,
-                creator,
-                closedBy: interaction.user
-            }
-        );
-    } catch (error) {
-        console.error(
-            "Failed to create ticket transcript:",
-            error
-        );
+          try {
+            transcript = await createTicketTranscript(ticketChannel, {
+              ticketType: system.name,
+              creator,
+              closedBy: interaction.user,
+            });
+          } catch (error) {
+            console.error("Failed to create ticket transcript:", error);
 
-        return interaction.editReply({
-            content:
-                "❌ Failed to create the ticket transcript. The ticket was NOT deleted."
-        });
-    }
+            return interaction.editReply({
+              content:
+                "❌ Failed to create the ticket transcript. The ticket was NOT deleted.",
+            });
+          }
 
-    /*
+          /*
     ========================================
-    FETCH TRANSCRIPT CHANNEL
+    TRANSCRIPT CHANNEL
     ========================================
     */
 
-    const transcriptChannel = await client.channels
-        .fetch(TICKET_TRANSCRIPT_CHANNEL)
-        .catch(() => null);
+          const transcriptChannel = await client.channels
+            .fetch(TICKET_TRANSCRIPT_CHANNEL)
+            .catch(() => null);
 
-    if (!transcriptChannel) {
-        return interaction.editReply({
-            content:
-                "❌ Transcript channel could not be found. The ticket was NOT deleted."
-        });
-    }
+          if (!transcriptChannel) {
+            return interaction.editReply({
+              content:
+                "❌ Transcript channel could not be found. The ticket was NOT deleted.",
+            });
+          }
 
-    /*
+          /*
+    ========================================
+    TRANSCRIPT EMBED
+    ========================================
+    */
+
+          const transcriptEmbed = new EmbedBuilder()
+            .setColor("#5865F2")
+            .setTitle("🔒 Ticket Closed")
+            .addFields(
+              {
+                name: "Ticket",
+                value: `\`${ticketChannel.name}\``,
+                inline: true,
+              },
+              {
+                name: "Type",
+                value: system.name,
+                inline: true,
+              },
+              {
+                name: "Created By",
+                value: creator ? `<@${creator.id}>` : "Unknown",
+                inline: true,
+              },
+              {
+                name: "Closed By",
+                value: `<@${interaction.user.id}>`,
+                inline: true,
+              },
+            )
+            .setTimestamp();
+
+          /*
     ========================================
     SEND TRANSCRIPT
     ========================================
     */
 
-    const transcriptEmbed = new EmbedBuilder()
-        .setColor("#5865F2")
-        .setTitle("🔒 Ticket Closed")
-        .addFields(
-            {
-                name: "Ticket",
-                value: `\`${ticketChannel.name}\``,
-                inline: true
-            },
-            {
-                name: "Type",
-                value: system.name,
-                inline: true
-            },
-            {
-                name: "Created By",
-                value: creator
-                    ? `<@${creator.id}>`
-                    : "Unknown",
-                inline: true
-            },
-            {
-                name: "Closed By",
-                value: `<@${interaction.user.id}>`,
-                inline: true
-            },
-            {
-                name: "Messages",
-                value: `${ticketChannel.messages.cache.size}`,
-                inline: true
-            }
-        )
-        .setTimestamp();
-
-    await transcriptChannel.send({
-        embeds: [transcriptEmbed],
-        files: [
-            {
+          await transcriptChannel.send({
+            embeds: [transcriptEmbed],
+            files: [
+              {
                 attachment: transcript,
-                name: `${ticketChannel.name}.pdf`
-            }
-        ]
-    });
+                name: `${ticketChannel.name}.pdf`,
+              },
+            ],
+          });
 
-    /*
-    ========================================
-    CONFIRM
-    ========================================
-    */
-
-    await interaction.editReply({
-        content:
-            "🔒 Ticket closed and transcript archived."
-    });
-
-    /*
+          /*
     ========================================
     DELETE TICKET
     ========================================
     */
 
-    await ticketChannel.delete(
-        "Ticket closed and transcript archived."
-    );
-  }}
+          await interaction.editReply({
+            content: "🔒 Ticket closed and transcript archived.",
+          });
+
+          await ticketChannel.delete("Ticket closed and transcript archived.");
+        }
+      }
       /*
 ========================================
 CONTINUE APPLICATION
