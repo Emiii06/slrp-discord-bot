@@ -56,7 +56,7 @@ module.exports = (client) => {
       await testApplication(client, message, args);
       return;
     }
-
+    console.log("TICKET COMMAND:", command, args);
     if (command === "!ticketpanel") {
       await tickets(client, message, args);
       return;
