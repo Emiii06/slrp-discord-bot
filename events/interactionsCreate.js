@@ -317,7 +317,7 @@ TICKET OPEN
         return interaction.editReply({
           content: `✅ Your ticket has been created: ${ticketChannel}`,
         });
-
+      }
         /*
 ========================================
 CLOSE TICKET
@@ -549,7 +549,6 @@ if (
             );
         }
     }
-}
 
       }       
       /*
