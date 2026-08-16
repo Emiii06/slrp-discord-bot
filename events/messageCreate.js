@@ -10,7 +10,7 @@ const automod = require("../commands/automod");
 const continueApplication = require("../commands/continueapplication");
 const testApplication = require("../commands/testapplication");
 const tickets = require("../commands/tickets");
-const patchnotes = require("../commands/patchnote")
+const patchnote = require("../commands/patchnote")
 
 console.log("MESSAGE CREATE MODULE LOADED");
 
