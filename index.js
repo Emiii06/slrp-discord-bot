@@ -29,6 +29,7 @@ require("./events/messageCreate")(client);
 require("./events/interactionsCreate")(client);
 require("./commands/leaderboard")(client);
 require("./commands/application")(client);
+require("./events/serverLogs")(client);
 
 //Tasks
 require("./tasks/birthdayTask")(client);
