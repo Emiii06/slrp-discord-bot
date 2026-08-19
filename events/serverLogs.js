@@ -102,7 +102,7 @@ module.exports = (client) => {
             .addFields(
                 {
                     name: "User",
-                    value: `${member} (\`${member.user.id}\`)`
+                    value: `${member} (\`${member.id}\`)`
                 },
                 {
                     name: "Account Created",
@@ -129,7 +129,7 @@ module.exports = (client) => {
             .setTitle("📤 Member Left")
             .addFields({
                 name: "User",
-                value: `${member.user.tag} (\`${member.user.id}\`)`
+                value: `${member} (\`${member.id}\`)`
             })
             .setTimestamp();
 
@@ -445,7 +445,7 @@ NITRO BOOST
                 .addFields(
                     {
                         name: "User",
-                        value: `${newMember.user.tag} (\`${newMember.id}\`)`
+                        value: `${newMember} (\`${newMember.id}\`)`
                     },
                     {
                         name: "Boosted Since",
@@ -497,7 +497,7 @@ NITRO BOOST
             .addFields(
                 {
                     name: "User",
-                    value: `${member.user.tag} (\`${member.id}\`)`
+                    value: `${member} (\`${member.id}\`)`
                 },
                 {
                     name: "👤 Kicked By",
@@ -956,7 +956,7 @@ NITRO BOOST
                 .addFields(
                     {
                         name: "User",
-                        value: `${newMember.user.tag} (\`${newMember.id}\`)`
+                        value: `${newMember} (\`${newMember.id}\`)`
                     },
                     {
                         name: "Boosted Since",
