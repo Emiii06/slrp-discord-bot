@@ -1201,14 +1201,13 @@ NITRO BOOST
 
 
     /*
-========================================
-MESSAGE DELETE
-========================================
-*/
+    ========================================
+    MESSAGE DELETE
+    ========================================
+    */
 
     client.on("messageDelete", async (message) => {
 
-        // Ignore messages the bot cannot identify
         if (!message.guild) {
             return;
         }
@@ -1217,6 +1216,80 @@ MESSAGE DELETE
             message.content?.trim()
                 ? message.content
                 : "No message content available.";
+
+        let executor = null;
+
+        /*
+        ========================================
+        FIND AUDIT LOG EXECUTOR
+        ========================================
+        */
+
+        try {
+
+            await new Promise(resolve =>
+                setTimeout(resolve, 1000)
+            );
+
+            const logs = await message.guild.fetchAuditLogs({
+                type: AuditLogEvent.MessageDelete,
+                limit: 20
+            });
+
+            const entry = logs.entries.find(entry => {
+
+                if (!entry.target) {
+                    return false;
+                }
+
+                /*
+                Target must be the author
+                */
+
+                if (
+                    message.author &&
+                    entry.target.id !== message.author.id
+                ) {
+                    return false;
+                }
+
+                /*
+                Audit entry must be recent
+                */
+
+                if (
+                    Date.now() - entry.createdTimestamp > 10000
+                ) {
+                    return false;
+                }
+
+                /*
+                If Discord provides channel information,
+                make sure it matches.
+                */
+
+                if (
+                    entry.extra?.channel?.id &&
+                    entry.extra.channel.id !== message.channel.id
+                ) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            if (entry) {
+                executor = entry.executor;
+            }
+
+        } catch (error) {
+
+            console.error(
+                "SERVER LOGS: Failed to determine message delete executor:",
+                error
+            );
+
+        }
 
         const embed = new EmbedBuilder()
             .setColor("#ED4245")
@@ -1234,9 +1307,16 @@ MESSAGE DELETE
                 },
                 {
                     name: "Message",
-                    value: content.length > 1024
-                        ? content.substring(0, 1021) + "..."
-                        : content
+                    value:
+                        content.length > 1024
+                            ? content.substring(0, 1021) + "..."
+                            : content
+                },
+                {
+                    name: "👤 Deleted By",
+                    value: executor
+                        ? `${executor} (\`${executor.id}\`)`
+                        : "Unknown"
                 }
             )
             .setTimestamp();
@@ -1367,6 +1447,6 @@ BULK MESSAGE DELETE
     });
 
 
-    
+
 
 };
