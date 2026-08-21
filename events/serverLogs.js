@@ -88,6 +88,7 @@ module.exports = (client) => {
 
     console.log("SERVER LOGS MODULE LOADED");
 
+
     /*
     ========================================
     MEMBER JOIN
@@ -1144,80 +1145,6 @@ MEMBER LEAVE / KICK
             SERVER_LOGS
         );
     });
-
-    /*
-    ========================================
-    INVITE CREATED
-    ========================================
-    */
-
-    client.on("inviteCreate", async (invite) => {
-
-        const executor = invite.inviter;
-
-        const embed = new EmbedBuilder()
-            .setColor("#57F287")
-            .setTitle("🔗 Invite Created")
-            .addFields(
-                {
-                    name: "Invite",
-                    value: `\`${invite.code}\``
-                },
-                {
-                    name: "Channel",
-                    value: invite.channel
-                        ? `${invite.channel}`
-                        : "Unknown"
-                },
-                {
-                    name: "Inviter",
-                    value: executor
-                        ? `${executor} (\`${executor.id}\`)`
-                        : "Unknown"
-                }
-            )
-            .setTimestamp();
-
-        await sendLog(
-            invite.guild,
-            embed,
-            SERVER_LOGS
-        );
-    });
-
-
-    /*
-    ========================================
-    INVITE DELETED
-    ========================================
-    */
-
-    client.on("inviteDelete", async (invite) => {
-
-        const embed = new EmbedBuilder()
-            .setColor("#ED4245")
-            .setTitle("🗑️ Invite Deleted")
-            .addFields(
-                {
-                    name: "Invite",
-                    value: `\`${invite.code}\``
-                },
-                {
-                    name: "Channel",
-                    value: invite.channel
-                        ? `${invite.channel}`
-                        : "Unknown"
-                }
-            )
-            .setTimestamp();
-
-        await sendLog(
-            invite.guild,
-            embed,
-            SERVER_LOGS
-        );
-    });
-
 
     /*
     ========================================

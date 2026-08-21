@@ -34,4 +34,5 @@ require("./events/serverLogs")(client);
 //Tasks
 require("./tasks/birthdayTask")(client);
 
+
 client.login(TOKEN);
