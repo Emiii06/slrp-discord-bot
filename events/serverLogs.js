@@ -116,26 +116,6 @@ module.exports = (client) => {
         await sendLog(member.guild, embed);
     });
 
-    /*
-    ========================================
-    MEMBER LEAVE
-    ========================================
-    */
-
-    client.on("guildMemberRemove", async (member) => {
-
-        const embed = new EmbedBuilder()
-            .setColor("#ED4245")
-            .setTitle("📤 Member Left")
-            .addFields({
-                name: "User",
-                value: `${member} (\`${member.id}\`)`
-            })
-            .setTimestamp();
-
-        await sendLog(member.guild, embed);
-    });
-
 
     /*
 ========================================
@@ -468,42 +448,81 @@ NITRO BOOST
 
 
     /*
-    ========================================
-    MEMBER KICK
-    ========================================
-    */
+========================================
+MEMBER LEAVE / KICK
+========================================
+*/
 
     client.on("guildMemberRemove", async (member) => {
 
+        let kickExecutor = null;
+
         /*
-        The existing leave logger may also run.
-        We only log a kick if Discord's audit log
-        confirms that this was a kick.
+        ========================================
+        CHECK IF MEMBER WAS KICKED
+        ========================================
         */
 
-        const executor = await getAuditExecutor(
-            member.guild,
-            AuditLogEvent.MemberKick,
-            member.id
-        );
+        try {
 
-        if (!executor) {
-            return;
+            kickExecutor = await getAuditExecutor(
+                member.guild,
+                AuditLogEvent.MemberKick,
+                member.id
+            );
+
+        } catch (error) {
+
+            console.error(
+                "SERVER LOGS: Failed to check member kick:",
+                error
+            );
+
         }
+
+        /*
+        ========================================
+        MEMBER KICKED
+        ========================================
+        */
+
+        if (kickExecutor) {
+
+            const embed = new EmbedBuilder()
+                .setColor("#ED4245")
+                .setTitle("👢 Member Kicked")
+                .addFields(
+                    {
+                        name: "User",
+                        value: `${member} (\`${member.id}\`)`
+                    },
+                    {
+                        name: "👤 Kicked By",
+                        value: `${kickExecutor} (\`${kickExecutor.id}\`)`
+                    }
+                )
+                .setTimestamp();
+
+            return sendLog(
+                member.guild,
+                embed,
+                SERVER_LOGS
+            );
+        }
+
+        /*
+        ========================================
+        MEMBER LEFT
+        ========================================
+        */
 
         const embed = new EmbedBuilder()
             .setColor("#ED4245")
-            .setTitle("👢 Member Kicked")
-            .addFields(
-                {
-                    name: "User",
-                    value: `${member} (\`${member.id}\`)`
-                },
-                {
-                    name: "👤 Kicked By",
-                    value: `${executor} (\`${executor.id}\`)`
-                }
-            )
+            .setTitle("📤 Member Left")
+            .addFields({
+                name: "User",
+                value: `${member} (\`${member.id}\`)`
+            })
             .setTimestamp();
 
         await sendLog(

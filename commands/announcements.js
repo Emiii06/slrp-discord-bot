@@ -3,11 +3,11 @@ const { EmbedBuilder } = require("discord.js");
 const {
     SESSION_CHANNEL,
     PS_ROLE,
-    STAFF_ROLES
+    HOST_ROLE
 } = require("../config");
 
 module.exports = async (client, message, args, command) => {
-        const announcementCommands = [
+    const announcementCommands = [
         "!sessionstartup",
         "!sessionend",
         "!psduty",
@@ -17,23 +17,16 @@ module.exports = async (client, message, args, command) => {
     if (!announcementCommands.includes(command)) {
         return;
     }
-    
+
     const channel = await client.channels
         .fetch(SESSION_CHANNEL)
         .catch(() => null);
-    
+
     if (!channel) {
         return message.reply("❌ Announcement channel could not be found.");
     }
-    
-    if (
-        !message.member.roles.cache.has(PS_ROLE) &&
-        !message.member.permissions.has(STAFF_ROLES)
-    ) {
-        return message.reply(
-            "❌ You don't have permission to use this command."
-        );
-    }
+
+
 
     /*
     ========================================
@@ -43,6 +36,14 @@ module.exports = async (client, message, args, command) => {
 
     if (command === "!sessionstartup") {
 
+
+        if (
+            !message.member.roles.cache.has(HOST_ROLE)
+        ) {
+            return message.reply(
+                "❌ You don't have permission to use this command."
+            );
+        }
         const fs = require("fs");
 
         fs.writeFileSync(
@@ -89,7 +90,13 @@ module.exports = async (client, message, args, command) => {
     */
 
     if (command === "!sessionend") {
-
+        if (
+            !message.member.roles.cache.has(HOST_ROLE)
+        ) {
+            return message.reply(
+                "❌ You don't have permission to use this command."
+            );
+        }
         const fs = require("fs");
 
         const session = JSON.parse(
@@ -143,6 +150,13 @@ module.exports = async (client, message, args, command) => {
 
     if (command === "!psonduty") {
 
+        if (
+            !message.member.roles.cache.has(PS_ROLE)
+        ) {
+            return message.reply(
+                "❌ You don't have permission to use this command."
+            );
+        }
         const PSDutyOnembed = new EmbedBuilder()
             .setColor("#5865F2")
             .setTitle("🚔 Public Safety Status Update")
@@ -179,6 +193,13 @@ module.exports = async (client, message, args, command) => {
 
     if (command === "!psoffduty") {
 
+        if (
+            !message.member.roles.cache.has(PS_ROLE)
+        ) {
+            return message.reply(
+                "❌ You don't have permission to use this command."
+            );
+        }
         const PSDutyOffembed = new EmbedBuilder()
             .setColor("#ED4245")
             .setTitle("🚔 Public Safety Status Update")
