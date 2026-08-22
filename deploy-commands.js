@@ -42,7 +42,7 @@ const commands = [
         .setDescription("Create an in-game moderation log.")
         .addStringOption(option =>
             option
-                .setName("art")
+                .setName("type")
                 .setDescription("Type of moderation action.")
                 .setRequired(true)
                 .addChoices(
