@@ -22,7 +22,8 @@ const {
   PATCHNOTES_CHANNEL,
   TICKET_TRANSCRIPT_CHANNEL,
   MOD_LOG_CHANNEL,
-  SERVER_LOGS
+  SERVER_LOGS,
+  SESSION_CHANNEL
 } = require("../config");
 
 const activeApplications = new Map();
