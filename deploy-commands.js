@@ -212,6 +212,9 @@ const commands = [
                 .setDescription("Your birthday, e.g. 1 October 2006.")
                 .setRequired(false)
         ),
+    new SlashCommandBuilder()
+        .setName("apply-continue")
+        .setDescription("Continue your saved application."),
 
 
 ].map(command => command.toJSON());

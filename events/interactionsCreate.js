@@ -135,6 +135,83 @@ module.exports = (client) => {
             // /clear
             // /logs
 
+            /*
+========================================
+/apply-continue
+========================================
+*/
+
+            if (interaction.commandName === "apply-continue") {
+
+              const session =
+                activeApplications.get(interaction.user.id);
+
+              if (!session) {
+                return interaction.reply({
+                  content:
+                    "❌ You don't have an application in progress.",
+                  flags: 64
+                });
+              }
+
+              const application =
+                applications[session.type];
+
+              if (!application) {
+
+                console.error(
+                  "CONTINUE APPLICATION: Unknown application type:",
+                  session.type
+                );
+
+                return interaction.reply({
+                  content:
+                    "❌ Your application type is no longer available. Please contact staff.",
+                  flags: 64
+                });
+              }
+
+              const fields = [
+                ...application.information,
+                ...application.questions
+              ];
+
+              const currentIndex =
+                Number(session.currentIndex) || 0;
+
+              if (currentIndex >= fields.length) {
+                return interaction.reply({
+                  content:
+                    "❌ Your application is already complete.",
+                  flags: 64
+                });
+              }
+
+              const button =
+                new ButtonBuilder()
+                  .setCustomId(
+                    `application_continue_${interaction.user.id}`
+                  )
+                  .setLabel("Continue Application")
+                  .setStyle(ButtonStyle.Primary)
+                  .setEmoji("▶️");
+
+              const row =
+                new ActionRowBuilder()
+                  .addComponents(button);
+
+              return interaction.reply({
+                content:
+                  `📋 **${application.name} Application**\n\n` +
+                  `Your saved application was found.\n\n` +
+                  `**Progress:** ${currentIndex} / ${fields.length} questions answered\n` +
+                  `**Next Question:** ${currentIndex + 1}\n\n` +
+                  `Click below to continue your application.`,
+                components: [row],
+                flags: 64
+              });
+            }
+
           }
 
           /*
