@@ -110,6 +110,29 @@ const commands = [
                     }
                 )
         ),
+    new SlashCommandBuilder()
+        .setName("duty")
+        .setDescription("Manage staff duty status.")
+        .addStringOption(option =>
+            option
+                .setName("action")
+                .setDescription("Duty action.")
+                .setRequired(true)
+                .addChoices(
+                    {
+                        name: "🟢 Login",
+                        value: "login"
+                    },
+                    {
+                        name: "🔴 Logout",
+                        value: "logout"
+                    },
+                    {
+                        name: "👥 Currently On Duty",
+                        value: "loggedin"
+                    }
+                )
+        ),
 
 
 ].map(command => command.toJSON());

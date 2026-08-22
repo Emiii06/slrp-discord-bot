@@ -10,6 +10,21 @@ const {
   PermissionFlagsBits,
 } = require("discord.js");
 
+const {
+  users,
+  saveData,
+  getUserData
+} = require("../database");
+
+const {
+  isStaff,
+  isAdmin
+} = require("../utils/permissions");
+
+const {
+  formatDuration
+} = require("../utils/time");
+
 const applications = require("../commands/applicationData");
 
 const path = require("path");
@@ -202,6 +217,144 @@ SLASH COMMANDS
         interaction.isButton() ? interaction.customId : "not a button"
       );
 
+      /*
+      DUTY
+      */
+      /*
+ ========================================
+ /duty
+ ========================================
+ */
+
+      if (interaction.commandName === "duty") {
+
+        const action =
+          interaction.options.getString("action");
+
+        /*
+        ========================================
+        LOGIN
+        ========================================
+        */
+
+        if (action === "login") {
+
+          const user = getUserData(interaction.user.id);
+
+          if (user.loginTime !== null) {
+            return interaction.reply({
+              content: "You are already logged in.",
+              flags: 64
+            });
+          }
+
+          user.loginTime = Date.now();
+
+          saveData();
+
+          return interaction.reply({
+            content: "✅ You have been successfully logged in.",
+            flags: 64
+          });
+        }
+
+        /*
+        ========================================
+        LOGOUT
+        ========================================
+        */
+
+        if (action === "logout") {
+
+          const user = getUserData(interaction.user.id);
+
+          if (user.loginTime === null) {
+            return interaction.reply({
+              content: "You are not logged in.",
+              flags: 64
+            });
+          }
+
+          const loginTime = user.loginTime;
+          const logoutTime = Date.now();
+
+          const difference =
+            logoutTime - loginTime;
+
+          user.loginTime = null;
+          user.weekTime += difference;
+          user.totalTime += difference;
+
+          saveData();
+
+          const {
+            hours,
+            minutes,
+            seconds
+          } = formatDuration(difference);
+
+          return interaction.reply({
+            content:
+              `✅ You were successfully logged out.\n` +
+              `Online time: ${hours}h ${minutes}min ${seconds}s`,
+            flags: 64
+          });
+        }
+
+        /*
+        ========================================
+        CURRENTLY LOGGED IN
+        ========================================
+        */
+
+        if (action === "loggedin") {
+
+          if (!isStaff(interaction.member)) {
+            return interaction.reply({
+              content: "❌ You don't have permission.",
+              flags: 64
+            });
+          }
+
+          let description = "";
+
+          for (const [id, user] of users.entries()) {
+
+            if (user.loginTime === null) {
+              continue;
+            }
+
+            const difference =
+              Date.now() - user.loginTime;
+
+            const {
+              hours,
+              minutes,
+              seconds
+            } = formatDuration(difference);
+
+            description +=
+              `• <@${id}> (${hours}h ${minutes}m ${seconds}s)\n`;
+          }
+
+          if (description === "") {
+            return interaction.reply({
+              content: "✅ Nobody is currently on duty.",
+              flags: 64
+            });
+          }
+
+          const embed = new EmbedBuilder()
+            .setColor("#2B2D31")
+            .setTitle("🟢 Staff Currently On Duty")
+            .setDescription(description)
+            .setTimestamp();
+
+          return interaction.reply({
+            embeds: [embed]
+          });
+        }
+      }
       /*
 ========================================
 /session
