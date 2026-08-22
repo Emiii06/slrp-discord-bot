@@ -116,125 +116,85 @@ module.exports = (client) => {
   console.log("INTERACTION CREATE HANDLER REGISTERED");
 
   client.on("interactionCreate", async (interaction) => {
-
     module.exports = (client) => {
-      console.log("INTERACTION CREATE HANDLER REGISTERED");
-
-      client.on("interactionCreate", async (interaction) => {
-
-        try {
-
-          /*
-          ========================================
-          SLASH COMMANDS
-          ========================================
-          */
-
-          if (interaction.isChatInputCommand()) {
-
-            // /clear
-            // /logs
-
-            /*
+    /*
 ========================================
 /apply-continue
 ========================================
 */
 
-            if (interaction.commandName === "apply-continue") {
+    if (interaction.commandName === "apply-continue") {
 
-              const session =
-                activeApplications.get(interaction.user.id);
+      const session =
+        activeApplications.get(interaction.user.id);
 
-              if (!session) {
-                return interaction.reply({
-                  content:
-                    "❌ You don't have an application in progress.",
-                  flags: 64
-                });
-              }
+      if (!session) {
+        return interaction.reply({
+          content:
+            "❌ You don't have an application in progress.",
+          flags: 64
+        });
+      }
 
-              const application =
-                applications[session.type];
+      const application =
+        applications[session.type];
 
-              if (!application) {
+      if (!application) {
 
-                console.error(
-                  "CONTINUE APPLICATION: Unknown application type:",
-                  session.type
-                );
+        console.error(
+          "CONTINUE APPLICATION: Unknown application type:",
+          session.type
+        );
 
-                return interaction.reply({
-                  content:
-                    "❌ Your application type is no longer available. Please contact staff.",
-                  flags: 64
-                });
-              }
+        return interaction.reply({
+          content:
+            "❌ Your application type is no longer available. Please contact staff.",
+          flags: 64
+        });
+      }
 
-              const fields = [
-                ...application.information,
-                ...application.questions
-              ];
+      const fields = [
+        ...application.information,
+        ...application.questions
+      ];
 
-              const currentIndex =
-                Number(session.currentIndex) || 0;
+      const currentIndex =
+        Number(session.currentIndex) || 0;
 
-              if (currentIndex >= fields.length) {
-                return interaction.reply({
-                  content:
-                    "❌ Your application is already complete.",
-                  flags: 64
-                });
-              }
+      if (currentIndex >= fields.length) {
+        return interaction.reply({
+          content:
+            "❌ Your application is already complete.",
+          flags: 64
+        });
+      }
 
-              const button =
-                new ButtonBuilder()
-                  .setCustomId(
-                    `application_continue_${interaction.user.id}`
-                  )
-                  .setLabel("Continue Application")
-                  .setStyle(ButtonStyle.Primary)
-                  .setEmoji("▶️");
+      const button =
+        new ButtonBuilder()
+          .setCustomId(
+            `application_continue_${interaction.user.id}`
+          )
+          .setLabel("Continue Application")
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji("▶️");
 
-              const row =
-                new ActionRowBuilder()
-                  .addComponents(button);
+      const row =
+        new ActionRowBuilder()
+          .addComponents(button);
 
-              return interaction.reply({
-                content:
-                  `📋 **${application.name} Application**\n\n` +
-                  `Your saved application was found.\n\n` +
-                  `**Progress:** ${currentIndex} / ${fields.length} questions answered\n` +
-                  `**Next Question:** ${currentIndex + 1}\n\n` +
-                  `Click below to continue your application.`,
-                components: [row],
-                flags: 64
-              });
-            }
-
-          }
-
-          /*
-          ========================================
-          PATCHNOTE CREATE
-          ========================================
-          */
-
-          // ...
-
-        } catch (error) {
-
-          console.error(
-            "INTERACTION ERROR:",
-            error
-          );
-
-        }
-
+      return interaction.reply({
+        content:
+          `📋 **${application.name} Application**\n\n` +
+          `Your saved application was found.\n\n` +
+          `**Progress:** ${currentIndex} / ${fields.length} questions answered\n` +
+          `**Next Question:** ${currentIndex + 1}\n\n` +
+          `Click below to continue your application.`,
+        components: [row],
+        flags: 64
       });
-    };
+    }
 
-
+  }
     /*
 ========================================
 SLASH COMMANDS
@@ -244,112 +204,438 @@ SLASH COMMANDS
     if (interaction.isChatInputCommand()) {
 
 
-      if (interaction.commandName === "patchnote") {
+    if (interaction.commandName === "patchnote") {
 
-        if (
-          !interaction.member.permissions.has(
-            PermissionFlagsBits.Administrator
-          )
-        ) {
+      if (
+        !interaction.member.permissions.has(
+          PermissionFlagsBits.Administrator
+        )
+      ) {
+        return interaction.reply({
+          content: "❌ You don't have permission to create patchnotes.",
+          flags: 64
+        });
+      }
+
+      const button = new ButtonBuilder()
+        .setCustomId("patchnote_open")
+        .setLabel("Create Patchnote")
+        .setEmoji("📝")
+        .setStyle(ButtonStyle.Primary);
+
+      const row = new ActionRowBuilder()
+        .addComponents(button);
+
+      return interaction.reply({
+        content:
+          "📝 **Patchnote Creator**\nClick the button below to create a patchnote.",
+        components: [row]
+      });
+    }
+    if (interaction.commandName === "clear") {
+
+      if (
+        !interaction.member.permissions.has(
+          PermissionFlagsBits.ManageMessages
+        )
+      ) {
+        return interaction.reply({
+          content: "❌ You don't have permission to use this command.",
+          flags: 64
+        });
+      }
+
+      const amount = interaction.options.getInteger("amount");
+
+      try {
+
+        const messages = await interaction.channel.bulkDelete(
+          amount,
+          true
+        );
+
+        await interaction.reply({
+          content: `🗑️ Deleted **${messages.size}** message${messages.size === 1 ? "" : "s"}.`,
+          flags: 64
+        });
+
+      } catch (error) {
+
+        console.error("CLEAR COMMAND ERROR:", error);
+
+        if (!interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: "❌ I couldn't delete the messages.",
+            flags: 64
+          });
+        }
+      }
+
+      return;
+    }
+  }
+
+  try {
+
+    console.log(
+      "INTERACTION:",
+      interaction.type,
+      interaction.isButton() ? interaction.customId : "not a button"
+    );
+
+    /*
+    DUTY
+    */
+    /*
+========================================
+/duty
+========================================
+*/
+
+    if (interaction.commandName === "duty") {
+
+      const action =
+        interaction.options.getString("action");
+
+      /*
+      ========================================
+      LOGIN
+      ========================================
+      */
+
+      if (action === "login") {
+
+        const user = getUserData(interaction.user.id);
+
+        if (user.loginTime !== null) {
           return interaction.reply({
-            content: "❌ You don't have permission to create patchnotes.",
+            content: "You are already logged in.",
             flags: 64
           });
         }
 
-        const button = new ButtonBuilder()
-          .setCustomId("patchnote_open")
-          .setLabel("Create Patchnote")
-          .setEmoji("📝")
-          .setStyle(ButtonStyle.Primary);
+        user.loginTime = Date.now();
 
-        const row = new ActionRowBuilder()
-          .addComponents(button);
+        saveData();
+
+        return interaction.reply({
+          content: "✅ You have been successfully logged in.",
+          flags: 64
+        });
+      }
+
+      /*
+      ========================================
+      LOGOUT
+      ========================================
+      */
+
+      if (action === "logout") {
+
+        const user = getUserData(interaction.user.id);
+
+        if (user.loginTime === null) {
+          return interaction.reply({
+            content: "You are not logged in.",
+            flags: 64
+          });
+        }
+
+        const loginTime = user.loginTime;
+        const logoutTime = Date.now();
+
+        const difference =
+          logoutTime - loginTime;
+
+        user.loginTime = null;
+        user.weekTime += difference;
+        user.totalTime += difference;
+
+        saveData();
+
+        const {
+          hours,
+          minutes,
+          seconds
+        } = formatDuration(difference);
 
         return interaction.reply({
           content:
-            "📝 **Patchnote Creator**\nClick the button below to create a patchnote.",
-          components: [row]
+            `✅ You were successfully logged out.\n` +
+            `Online time: ${hours}h ${minutes}min ${seconds}s`,
+          flags: 64
         });
       }
-      if (interaction.commandName === "clear") {
 
-        if (
-          !interaction.member.permissions.has(
-            PermissionFlagsBits.ManageMessages
-          )
-        ) {
+      /*
+      ========================================
+      CURRENTLY LOGGED IN
+      ========================================
+      */
+
+      if (action === "loggedin") {
+
+        if (!isStaff(interaction.member)) {
           return interaction.reply({
-            content: "❌ You don't have permission to use this command.",
+            content: "❌ You don't have permission.",
             flags: 64
           });
         }
 
-        const amount = interaction.options.getInteger("amount");
+        let description = "";
 
-        try {
+        for (const [id, user] of users.entries()) {
 
-          const messages = await interaction.channel.bulkDelete(
-            amount,
-            true
+          if (user.loginTime === null) {
+            continue;
+          }
+
+          const difference =
+            Date.now() - user.loginTime;
+
+          const {
+            hours,
+            minutes,
+            seconds
+          } = formatDuration(difference);
+
+          description +=
+            `• <@${id}> (${hours}h ${minutes}m ${seconds}s)\n`;
+        }
+
+        if (description === "") {
+          return interaction.reply({
+            content: "✅ Nobody is currently on duty.",
+            flags: 64
+          });
+        }
+
+        const embed = new EmbedBuilder()
+          .setColor("#2B2D31")
+          .setTitle("🟢 Staff Currently On Duty")
+          .setDescription(description)
+          .setTimestamp();
+
+        return interaction.reply({
+          embeds: [embed]
+        });
+      }
+
+      /*
+========================================
+WEEK
+========================================
+*/
+
+      if (action === "week") {
+
+        const user = getUserData(interaction.user.id);
+
+        const {
+          hours,
+          minutes,
+          seconds
+        } = formatDuration(user.weekTime);
+
+        return interaction.reply({
+          content:
+            `📅 This week you've been on duty for **${hours}h ${minutes}m ${seconds}s**.`,
+          flags: 64
+        });
+      }
+
+
+      /*
+      ========================================
+      TOTAL TIME
+      ========================================
+      */
+
+      if (action === "time") {
+
+        const user = getUserData(interaction.user.id);
+
+        const {
+          hours,
+          minutes,
+          seconds
+        } = formatDuration(user.totalTime);
+
+        return interaction.reply({
+          content:
+            `⏳ Total duty time: **${hours}h ${minutes}m ${seconds}s**.`,
+          flags: 64
+        });
+      }
+
+
+      /*
+      ========================================
+      STATS
+      ========================================
+      */
+
+      if (action === "stats") {
+
+        const member = interaction.options.getMember("user")
+          || interaction.member;
+
+        const user = getUserData(member.id);
+
+        const weeklyLeaderboard = [...users.entries()]
+          .sort((a, b) => b[1].weekTime - a[1].weekTime);
+
+        const weeklyRank =
+          weeklyLeaderboard.findIndex(
+            ([id]) => id === member.id
+          ) + 1;
+
+        const totalLeaderboard = [...users.entries()]
+          .sort((a, b) => b[1].totalTime - a[1].totalTime);
+
+        const totalRank =
+          totalLeaderboard.findIndex(
+            ([id]) => id === member.id
+          ) + 1;
+
+        const weekSeconds =
+          Math.floor(user.weekTime / 1000);
+
+        const totalSeconds =
+          Math.floor(user.totalTime / 1000);
+
+        const weekHours =
+          Math.floor(weekSeconds / 3600);
+
+        const weekMinutes =
+          Math.floor(
+            (weekSeconds % 3600) / 60
           );
 
-          await interaction.reply({
-            content: `🗑️ Deleted **${messages.size}** message${messages.size === 1 ? "" : "s"}.`,
-            flags: 64
-          });
+        const totalHours =
+          Math.floor(totalSeconds / 3600);
 
-        } catch (error) {
+        const totalMinutes =
+          Math.floor(
+            (totalSeconds % 3600) / 60
+          );
 
-          console.error("CLEAR COMMAND ERROR:", error);
+        let session = "Offline";
 
-          if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({
-              content: "❌ I couldn't delete the messages.",
-              flags: 64
-            });
-          }
+        if (user.loginTime !== null) {
+
+          const diff =
+            Date.now() - user.loginTime;
+
+          const seconds =
+            Math.floor(diff / 1000);
+
+          const hours =
+            Math.floor(seconds / 3600);
+
+          const minutes =
+            Math.floor(
+              (seconds % 3600) / 60
+            );
+
+          session = `${hours}h ${minutes}m`;
         }
 
-        return;
+        const embed = new EmbedBuilder()
+          .setColor("#2B2D31")
+          .setTitle("📊 Staff Statistics")
+          .setDescription(
+            `👤 **${member.user.tag}**`
+          )
+          .setThumbnail(
+            member.user.displayAvatarURL()
+          )
+          .addFields(
+            {
+              name: "⏱ Current Session",
+              value: session,
+              inline: true
+            },
+            {
+              name: "📅 This Week",
+              value: `${weekHours}h ${weekMinutes}m`,
+              inline: true
+            },
+            {
+              name: "🏆 All Time",
+              value: `${totalHours}h ${totalMinutes}m`,
+              inline: true
+            },
+            {
+              name: "🟢 Status",
+              value:
+                user.loginTime
+                  ? "On Duty"
+                  : "Off Duty",
+              inline: true
+            },
+            {
+              name: "🏅 Weekly Rank",
+              value: `#${weeklyRank}`,
+              inline: true
+            },
+            {
+              name: "👑 All Time Rank",
+              value: `#${totalRank}`,
+              inline: true
+            }
+          )
+          .setTimestamp();
+
+        return interaction.reply({
+          embeds: [embed],
+          flags: 64
+        });
       }
-    }
-
-    try {
-
-      console.log(
-        "INTERACTION:",
-        interaction.type,
-        interaction.isButton() ? interaction.customId : "not a button"
-      );
-
       /*
-      DUTY
-      */
-      /*
- ========================================
- /duty
- ========================================
- */
+========================================
+ADMIN DUTY ACTIONS
+========================================
+*/
 
-      if (interaction.commandName === "duty") {
+      if (
+        ["login-user", "logout-user", "add-time", "remove-time"]
+          .includes(action)
+      ) {
 
-        const action =
-          interaction.options.getString("action");
+        if (!isAdmin(interaction.member)) {
+          return interaction.reply({
+            content: "❌ You don't have permission.",
+            flags: 64
+          });
+        }
+
+        const member =
+          interaction.options.getMember("user");
+
+        if (!member) {
+          return interaction.reply({
+            content: "❌ Please select a user.",
+            flags: 64
+          });
+        }
+
+        const user =
+          getUserData(member.id);
+
 
         /*
         ========================================
-        LOGIN
+        LOGIN USER
         ========================================
         */
 
-        if (action === "login") {
-
-          const user = getUserData(interaction.user.id);
+        if (action === "login-user") {
 
           if (user.loginTime !== null) {
             return interaction.reply({
-              content: "You are already logged in.",
+              content:
+                `❌ ${member.user.tag} is already logged in.`,
               flags: 64
             });
           }
@@ -359,30 +645,34 @@ SLASH COMMANDS
           saveData();
 
           return interaction.reply({
-            content: "✅ You have been successfully logged in.",
+            content:
+              `✅ ${member.user.tag} has been logged in.`,
             flags: 64
           });
         }
 
+
         /*
         ========================================
-        LOGOUT
+        LOGOUT USER
         ========================================
         */
 
-        if (action === "logout") {
-
-          const user = getUserData(interaction.user.id);
+        if (action === "logout-user") {
 
           if (user.loginTime === null) {
             return interaction.reply({
-              content: "You are not logged in.",
+              content:
+                `❌ ${member.user.tag} is not logged in.`,
               flags: 64
             });
           }
 
-          const loginTime = user.loginTime;
-          const logoutTime = Date.now();
+          const loginTime =
+            user.loginTime;
+
+          const logoutTime =
+            Date.now();
 
           const difference =
             logoutTime - loginTime;
@@ -401,85 +691,78 @@ SLASH COMMANDS
 
           return interaction.reply({
             content:
-              `✅ You were successfully logged out.\n` +
+              `✅ ${member.user.tag} has been logged out.\n` +
               `Online time: ${hours}h ${minutes}min ${seconds}s`,
             flags: 64
           });
         }
 
+
         /*
         ========================================
-        CURRENTLY LOGGED IN
+        ADD TIME
         ========================================
         */
 
-        if (action === "loggedin") {
+        if (action === "add-time") {
 
-          if (!isStaff(interaction.member)) {
+          const timeString =
+            interaction.options
+              .getString("time");
+
+          if (!timeString) {
             return interaction.reply({
-              content: "❌ You don't have permission.",
+              content:
+                "Usage: `/duty action:add-time user:@User time:2h30m`",
               flags: 64
             });
           }
 
-          let description = "";
+          const match =
+            timeString
+              .toLowerCase()
+              .match(
+                /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/
+              );
 
-          for (const [id, user] of users.entries()) {
-
-            if (user.loginTime === null) {
-              continue;
-            }
-
-            const difference =
-              Date.now() - user.loginTime;
-
-            const {
-              hours,
-              minutes,
-              seconds
-            } = formatDuration(difference);
-
-            description +=
-              `• <@${id}> (${hours}h ${minutes}m ${seconds}s)\n`;
-          }
-
-          if (description === "") {
+          if (!match) {
             return interaction.reply({
-              content: "✅ Nobody is currently on duty.",
+              content:
+                "❌ Invalid duration. Example: `2h30m`",
               flags: 64
             });
           }
 
-          const embed = new EmbedBuilder()
-            .setColor("#2B2D31")
-            .setTitle("🟢 Staff Currently On Duty")
-            .setDescription(description)
-            .setTimestamp();
+          const hours =
+            parseInt(match[1] || 0);
 
-          return interaction.reply({
-            embeds: [embed]
-          });
-        }
+          const minutes =
+            parseInt(match[2] || 0);
 
-        /*
-========================================
-WEEK
-========================================
-*/
+          const seconds =
+            parseInt(match[3] || 0);
 
-        if (action === "week") {
+          const duration =
+            (hours * 3600 +
+              minutes * 60 +
+              seconds) * 1000;
 
-          const user = getUserData(interaction.user.id);
+          if (duration <= 0) {
+            return interaction.reply({
+              content:
+                "❌ Please enter a valid duration.",
+              flags: 64
+            });
+          }
 
-          const {
-            hours,
-            minutes,
-            seconds
-          } = formatDuration(user.weekTime);
+          user.weekTime += duration;
+          user.totalTime += duration;
+
+          saveData();
 
           return interaction.reply({
             content:
-              `📅 This week you've been on duty for **${hours}h ${minutes}m ${seconds}s**.`,
+              `✅ Added **${hours}h ${minutes}m ${seconds}s** to ${member.user.tag}.`,
             flags: 64
           });
         }
@@ -487,1959 +770,1869 @@ WEEK
 
         /*
         ========================================
-        TOTAL TIME
+        REMOVE TIME
         ========================================
         */
 
-        if (action === "time") {
+        if (action === "remove-time") {
 
-          const user = getUserData(interaction.user.id);
+          const timeString =
+            interaction.options
+              .getString("time");
 
-          const {
-            hours,
-            minutes,
-            seconds
-          } = formatDuration(user.totalTime);
+          if (!timeString) {
+            return interaction.reply({
+              content:
+                "Usage: `/duty action:remove-time user:@User time:30m`",
+              flags: 64
+            });
+          }
+
+          const match =
+            timeString
+              .toLowerCase()
+              .match(
+                /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/
+              );
+
+          if (!match) {
+            return interaction.reply({
+              content:
+                "❌ Invalid duration. Example: `2h30m`",
+              flags: 64
+            });
+          }
+
+          const hours =
+            parseInt(match[1] || 0);
+
+          const minutes =
+            parseInt(match[2] || 0);
+
+          const seconds =
+            parseInt(match[3] || 0);
+
+          const duration =
+            (hours * 3600 +
+              minutes * 60 +
+              seconds) * 1000;
+
+          if (duration <= 0) {
+            return interaction.reply({
+              content:
+                "❌ Please enter a valid duration.",
+              flags: 64
+            });
+          }
+
+          user.weekTime =
+            Math.max(
+              0,
+              user.weekTime - duration
+            );
+
+          user.totalTime =
+            Math.max(
+              0,
+              user.totalTime - duration
+            );
+
+          saveData();
 
           return interaction.reply({
             content:
-              `⏳ Total duty time: **${hours}h ${minutes}m ${seconds}s**.`,
+              `✅ Removed **${hours}h ${minutes}m ${seconds}s** from ${member.user.tag}.`,
             flags: 64
           });
-        }
-
-
-        /*
-        ========================================
-        STATS
-        ========================================
-        */
-
-        if (action === "stats") {
-
-          const member = interaction.options.getMember("user")
-            || interaction.member;
-
-          const user = getUserData(member.id);
-
-          const weeklyLeaderboard = [...users.entries()]
-            .sort((a, b) => b[1].weekTime - a[1].weekTime);
-
-          const weeklyRank =
-            weeklyLeaderboard.findIndex(
-              ([id]) => id === member.id
-            ) + 1;
-
-          const totalLeaderboard = [...users.entries()]
-            .sort((a, b) => b[1].totalTime - a[1].totalTime);
-
-          const totalRank =
-            totalLeaderboard.findIndex(
-              ([id]) => id === member.id
-            ) + 1;
-
-          const weekSeconds =
-            Math.floor(user.weekTime / 1000);
-
-          const totalSeconds =
-            Math.floor(user.totalTime / 1000);
-
-          const weekHours =
-            Math.floor(weekSeconds / 3600);
-
-          const weekMinutes =
-            Math.floor(
-              (weekSeconds % 3600) / 60
-            );
-
-          const totalHours =
-            Math.floor(totalSeconds / 3600);
-
-          const totalMinutes =
-            Math.floor(
-              (totalSeconds % 3600) / 60
-            );
-
-          let session = "Offline";
-
-          if (user.loginTime !== null) {
-
-            const diff =
-              Date.now() - user.loginTime;
-
-            const seconds =
-              Math.floor(diff / 1000);
-
-            const hours =
-              Math.floor(seconds / 3600);
-
-            const minutes =
-              Math.floor(
-                (seconds % 3600) / 60
-              );
-
-            session = `${hours}h ${minutes}m`;
-          }
-
-          const embed = new EmbedBuilder()
-            .setColor("#2B2D31")
-            .setTitle("📊 Staff Statistics")
-            .setDescription(
-              `👤 **${member.user.tag}**`
-            )
-            .setThumbnail(
-              member.user.displayAvatarURL()
-            )
-            .addFields(
-              {
-                name: "⏱ Current Session",
-                value: session,
-                inline: true
-              },
-              {
-                name: "📅 This Week",
-                value: `${weekHours}h ${weekMinutes}m`,
-                inline: true
-              },
-              {
-                name: "🏆 All Time",
-                value: `${totalHours}h ${totalMinutes}m`,
-                inline: true
-              },
-              {
-                name: "🟢 Status",
-                value:
-                  user.loginTime
-                    ? "On Duty"
-                    : "Off Duty",
-                inline: true
-              },
-              {
-                name: "🏅 Weekly Rank",
-                value: `#${weeklyRank}`,
-                inline: true
-              },
-              {
-                name: "👑 All Time Rank",
-                value: `#${totalRank}`,
-                inline: true
-              }
-            )
-            .setTimestamp();
-
-          return interaction.reply({
-            embeds: [embed],
-            flags: 64
-          });
-        }
-        /*
-========================================
-ADMIN DUTY ACTIONS
-========================================
-*/
-
-        if (
-          ["login-user", "logout-user", "add-time", "remove-time"]
-            .includes(action)
-        ) {
-
-          if (!isAdmin(interaction.member)) {
-            return interaction.reply({
-              content: "❌ You don't have permission.",
-              flags: 64
-            });
-          }
-
-          const member =
-            interaction.options.getMember("user");
-
-          if (!member) {
-            return interaction.reply({
-              content: "❌ Please select a user.",
-              flags: 64
-            });
-          }
-
-          const user =
-            getUserData(member.id);
-
-
-          /*
-          ========================================
-          LOGIN USER
-          ========================================
-          */
-
-          if (action === "login-user") {
-
-            if (user.loginTime !== null) {
-              return interaction.reply({
-                content:
-                  `❌ ${member.user.tag} is already logged in.`,
-                flags: 64
-              });
-            }
-
-            user.loginTime = Date.now();
-
-            saveData();
-
-            return interaction.reply({
-              content:
-                `✅ ${member.user.tag} has been logged in.`,
-              flags: 64
-            });
-          }
-
-
-          /*
-          ========================================
-          LOGOUT USER
-          ========================================
-          */
-
-          if (action === "logout-user") {
-
-            if (user.loginTime === null) {
-              return interaction.reply({
-                content:
-                  `❌ ${member.user.tag} is not logged in.`,
-                flags: 64
-              });
-            }
-
-            const loginTime =
-              user.loginTime;
-
-            const logoutTime =
-              Date.now();
-
-            const difference =
-              logoutTime - loginTime;
-
-            user.loginTime = null;
-            user.weekTime += difference;
-            user.totalTime += difference;
-
-            saveData();
-
-            const {
-              hours,
-              minutes,
-              seconds
-            } = formatDuration(difference);
-
-            return interaction.reply({
-              content:
-                `✅ ${member.user.tag} has been logged out.\n` +
-                `Online time: ${hours}h ${minutes}min ${seconds}s`,
-              flags: 64
-            });
-          }
-
-
-          /*
-          ========================================
-          ADD TIME
-          ========================================
-          */
-
-          if (action === "add-time") {
-
-            const timeString =
-              interaction.options
-                .getString("time");
-
-            if (!timeString) {
-              return interaction.reply({
-                content:
-                  "Usage: `/duty action:add-time user:@User time:2h30m`",
-                flags: 64
-              });
-            }
-
-            const match =
-              timeString
-                .toLowerCase()
-                .match(
-                  /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/
-                );
-
-            if (!match) {
-              return interaction.reply({
-                content:
-                  "❌ Invalid duration. Example: `2h30m`",
-                flags: 64
-              });
-            }
-
-            const hours =
-              parseInt(match[1] || 0);
-
-            const minutes =
-              parseInt(match[2] || 0);
-
-            const seconds =
-              parseInt(match[3] || 0);
-
-            const duration =
-              (hours * 3600 +
-                minutes * 60 +
-                seconds) * 1000;
-
-            if (duration <= 0) {
-              return interaction.reply({
-                content:
-                  "❌ Please enter a valid duration.",
-                flags: 64
-              });
-            }
-
-            user.weekTime += duration;
-            user.totalTime += duration;
-
-            saveData();
-
-            return interaction.reply({
-              content:
-                `✅ Added **${hours}h ${minutes}m ${seconds}s** to ${member.user.tag}.`,
-              flags: 64
-            });
-          }
-
-
-          /*
-          ========================================
-          REMOVE TIME
-          ========================================
-          */
-
-          if (action === "remove-time") {
-
-            const timeString =
-              interaction.options
-                .getString("time");
-
-            if (!timeString) {
-              return interaction.reply({
-                content:
-                  "Usage: `/duty action:remove-time user:@User time:30m`",
-                flags: 64
-              });
-            }
-
-            const match =
-              timeString
-                .toLowerCase()
-                .match(
-                  /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/
-                );
-
-            if (!match) {
-              return interaction.reply({
-                content:
-                  "❌ Invalid duration. Example: `2h30m`",
-                flags: 64
-              });
-            }
-
-            const hours =
-              parseInt(match[1] || 0);
-
-            const minutes =
-              parseInt(match[2] || 0);
-
-            const seconds =
-              parseInt(match[3] || 0);
-
-            const duration =
-              (hours * 3600 +
-                minutes * 60 +
-                seconds) * 1000;
-
-            if (duration <= 0) {
-              return interaction.reply({
-                content:
-                  "❌ Please enter a valid duration.",
-                flags: 64
-              });
-            }
-
-            user.weekTime =
-              Math.max(
-                0,
-                user.weekTime - duration
-              );
-
-            user.totalTime =
-              Math.max(
-                0,
-                user.totalTime - duration
-              );
-
-            saveData();
-
-            return interaction.reply({
-              content:
-                `✅ Removed **${hours}h ${minutes}m ${seconds}s** from ${member.user.tag}.`,
-              flags: 64
-            });
-          }
         }
       }
-      /*
+    }
+    /*
 ========================================
 /birthday
 ========================================
 */
 
-      if (interaction.commandName === "birthday") {
+    if (interaction.commandName === "birthday") {
 
-        const action =
-          interaction.options.getString("action");
+      const action =
+        interaction.options.getString("action");
 
 
-        /*
-        ========================================
-        MY BIRTHDAY
-        ========================================
-        */
+      /*
+      ========================================
+      MY BIRTHDAY
+      ========================================
+      */
 
-        if (action === "me") {
+      if (action === "me") {
 
-          const birthday =
-            getBirthday(interaction.user.id);
+        const birthday =
+          getBirthday(interaction.user.id);
 
-          if (!birthday) {
-            return interaction.reply({
-              content:
-                "You haven't set your birthday yet.",
-              flags: 64
-            });
-          }
-
-          let text;
-
-          if (birthday.format === "EU") {
-
-            text =
-              `${birthday.day}.${birthday.month}.${birthday.year}`;
-
-          } else {
-
-            text =
-              `${birthday.month}/${birthday.day}/${birthday.year}`;
-          }
-
+        if (!birthday) {
           return interaction.reply({
             content:
-              `🎂 Your birthday is **${text}**.`,
+              "You haven't set your birthday yet.",
             flags: 64
           });
         }
 
+        let text;
 
-        /*
-        ========================================
-        REMOVE
-        ========================================
-        */
+        if (birthday.format === "EU") {
 
-        if (action === "remove") {
+          text =
+            `${birthday.day}.${birthday.month}.${birthday.year}`;
 
-          removeBirthday(interaction.user.id);
+        } else {
 
+          text =
+            `${birthday.month}/${birthday.day}/${birthday.year}`;
+        }
+
+        return interaction.reply({
+          content:
+            `🎂 Your birthday is **${text}**.`,
+          flags: 64
+        });
+      }
+
+
+      /*
+      ========================================
+      REMOVE
+      ========================================
+      */
+
+      if (action === "remove") {
+
+        removeBirthday(interaction.user.id);
+
+        return interaction.reply({
+          content:
+            "✅ Your birthday has been removed.",
+          flags: 64
+        });
+      }
+
+
+      /*
+      ========================================
+      SET
+      ========================================
+      */
+
+      if (action === "set") {
+
+        const input =
+          interaction.options.getString("date");
+
+        if (!input) {
           return interaction.reply({
             content:
-              "✅ Your birthday has been removed.",
+              "Usage: `/birthday action:set date:1 October 2006`",
             flags: 64
           });
         }
 
+        const result =
+          parseBirthday(input);
 
-        /*
-        ========================================
-        SET
-        ========================================
-        */
+        if (result.success) {
 
-        if (action === "set") {
-
-          const input =
-            interaction.options.getString("date");
-
-          if (!input) {
-            return interaction.reply({
-              content:
-                "Usage: `/birthday action:set date:1 October 2006`",
-              flags: 64
-            });
-          }
-
-          const result =
-            parseBirthday(input);
-
-          if (result.success) {
-
-            setBirthday(
-              interaction.user.id,
-              result
-            );
-
-            return interaction.reply({
-              content:
-                "✅ Your birthday has been set.",
-              flags: 64
-            });
-          }
-
-          if (result.ambiguous) {
-
-            return interaction.reply({
-              content:
-                "❓ Your date format is ambiguous.\n\n" +
-                `🇪🇺 **EU:** ${result.eu.day}.${result.eu.month}.${result.eu.year}\n` +
-                `🇺🇸 **US:** ${result.us.month}/${result.us.day}/${result.us.year}\n\n` +
-                "Please use either:\n" +
-                "`1 October 2006`\n" +
-                "or\n" +
-                "`October 1 2006`",
-              flags: 64
-            });
-          }
-
-          if (result.error === "invalid") {
-
-            return interaction.reply({
-              content:
-                "❌ That isn't a valid date.",
-              flags: 64
-            });
-          }
-
-          return interaction.reply({
-            content:
-              "❌ Unknown date format.",
-            flags: 64
-          });
-        }
-
-
-        /*
-        ========================================
-        UPCOMING BIRTHDAYS
-        ========================================
-        */
-
-        if (action === "list") {
-
-          const today = new Date();
-
-          const list = [];
-
-          for (const [id, birthday] of birthdays.entries()) {
-
-            const nextBirthday = new Date(
-              today.getFullYear(),
-              birthday.month - 1,
-              birthday.day
-            );
-
-            if (nextBirthday < today) {
-              nextBirthday.setFullYear(
-                today.getFullYear() + 1
-              );
-            }
-
-            const difference =
-              nextBirthday.getTime() -
-              today.getTime();
-
-            const days = Math.ceil(
-              difference /
-              (1000 * 60 * 60 * 24)
-            );
-
-            list.push({
-              id,
-              birthday,
-              days,
-              nextBirthday
-            });
-          }
-
-          list.sort(
-            (a, b) => a.days - b.days
+          setBirthday(
+            interaction.user.id,
+            result
           );
 
-          let description = "";
-
-          for (const entry of list) {
-
-            const member =
-              await interaction.guild.members
-                .fetch(entry.id)
-                .catch(() => null);
-
-            if (!member) continue;
-
-            const turns =
-              entry.nextBirthday.getFullYear() -
-              entry.birthday.year;
-
-            let when;
-
-            if (entry.days === 0) {
-              when = "🎉 Today!";
-            } else if (entry.days === 1) {
-              when = "⏳ Tomorrow";
-            } else {
-              when =
-                `⏳ In ${entry.days} days`;
-            }
-
-            description +=
-              `🥳 **${member.displayName}**\n` +
-              `📅 ${entry.birthday.day}.${entry.birthday.month}.${entry.birthday.year}\n` +
-              `🎈 Turns ${turns}\n` +
-              `${when}\n\n`;
-          }
-
-          if (description === "") {
-            description =
-              "*Nobody has set their birthday yet.*";
-          }
-
-          const embed = new EmbedBuilder()
-            .setColor("#F8C8DC")
-            .setTitle("🎂 Upcoming Birthdays")
-            .setDescription(description)
-            .setTimestamp();
-
           return interaction.reply({
-            embeds: [embed]
+            content:
+              "✅ Your birthday has been set.",
+            flags: 64
           });
         }
 
-
-        /*
-        ========================================
-        TEST
-        ========================================
-        */
-
-        if (action === "test") {
-
-          if (!isAdmin(interaction.member)) {
-            return interaction.reply({
-              content:
-                "❌ You don't have permission.",
-              flags: 64
-            });
-          }
-
-          const banner =
-            new AttachmentBuilder(
-              "./media/birthdayBanner.png"
-            );
-
-          const embed =
-            createBirthdayEmbed(
-              interaction.member,
-              20
-            );
+        if (result.ambiguous) {
 
           return interaction.reply({
-            embeds: [embed],
-            files: [banner]
+            content:
+              "❓ Your date format is ambiguous.\n\n" +
+              `🇪🇺 **EU:** ${result.eu.day}.${result.eu.month}.${result.eu.year}\n` +
+              `🇺🇸 **US:** ${result.us.month}/${result.us.day}/${result.us.year}\n\n` +
+              "Please use either:\n" +
+              "`1 October 2006`\n" +
+              "or\n" +
+              "`October 1 2006`",
+            flags: 64
           });
         }
+
+        if (result.error === "invalid") {
+
+          return interaction.reply({
+            content:
+              "❌ That isn't a valid date.",
+            flags: 64
+          });
+        }
+
+        return interaction.reply({
+          content:
+            "❌ Unknown date format.",
+          flags: 64
+        });
       }
+
+
       /*
+      ========================================
+      UPCOMING BIRTHDAYS
+      ========================================
+      */
+
+      if (action === "list") {
+
+        const today = new Date();
+
+        const list = [];
+
+        for (const [id, birthday] of birthdays.entries()) {
+
+          const nextBirthday = new Date(
+            today.getFullYear(),
+            birthday.month - 1,
+            birthday.day
+          );
+
+          if (nextBirthday < today) {
+            nextBirthday.setFullYear(
+              today.getFullYear() + 1
+            );
+          }
+
+          const difference =
+            nextBirthday.getTime() -
+            today.getTime();
+
+          const days = Math.ceil(
+            difference /
+            (1000 * 60 * 60 * 24)
+          );
+
+          list.push({
+            id,
+            birthday,
+            days,
+            nextBirthday
+          });
+        }
+
+        list.sort(
+          (a, b) => a.days - b.days
+        );
+
+        let description = "";
+
+        for (const entry of list) {
+
+          const member =
+            await interaction.guild.members
+              .fetch(entry.id)
+              .catch(() => null);
+
+          if (!member) continue;
+
+          const turns =
+            entry.nextBirthday.getFullYear() -
+            entry.birthday.year;
+
+          let when;
+
+          if (entry.days === 0) {
+            when = "🎉 Today!";
+          } else if (entry.days === 1) {
+            when = "⏳ Tomorrow";
+          } else {
+            when =
+              `⏳ In ${entry.days} days`;
+          }
+
+          description +=
+            `🥳 **${member.displayName}**\n` +
+            `📅 ${entry.birthday.day}.${entry.birthday.month}.${entry.birthday.year}\n` +
+            `🎈 Turns ${turns}\n` +
+            `${when}\n\n`;
+        }
+
+        if (description === "") {
+          description =
+            "*Nobody has set their birthday yet.*";
+        }
+
+        const embed = new EmbedBuilder()
+          .setColor("#F8C8DC")
+          .setTitle("🎂 Upcoming Birthdays")
+          .setDescription(description)
+          .setTimestamp();
+
+        return interaction.reply({
+          embeds: [embed]
+        });
+      }
+
+
+      /*
+      ========================================
+      TEST
+      ========================================
+      */
+
+      if (action === "test") {
+
+        if (!isAdmin(interaction.member)) {
+          return interaction.reply({
+            content:
+              "❌ You don't have permission.",
+            flags: 64
+          });
+        }
+
+        const banner =
+          new AttachmentBuilder(
+            "./media/birthdayBanner.png"
+          );
+
+        const embed =
+          createBirthdayEmbed(
+            interaction.member,
+            20
+          );
+
+        return interaction.reply({
+          embeds: [embed],
+          files: [banner]
+        });
+      }
+    }
+    /*
 ========================================
 /session
 ========================================
 */
 
-      if (interaction.commandName === "session") {
+    if (interaction.commandName === "session") {
 
-        const action =
-          interaction.options.getString("action");
+      const action =
+        interaction.options.getString("action");
 
-        const channel = await client.channels
-          .fetch(SESSION_CHANNEL)
-          .catch(() => null);
+      const channel = await client.channels
+        .fetch(SESSION_CHANNEL)
+        .catch(() => null);
 
-        if (!channel) {
-          return interaction.reply({
-            content: "❌ Announcement channel could not be found.",
-            flags: 64
-          });
-        }
-
-        const fs = require("fs");
-
-        /*
-        ========================================
-        SESSION STARTUP
-        ========================================
-        */
-
-        if (action === "startup") {
-
-          if (
-            !interaction.member.roles.cache.has(HOST_ROLE)
-          ) {
-            return interaction.reply({
-              content:
-                "❌ You don't have permission to use this command.",
-              flags: 64
-            });
-          }
-
-          fs.writeFileSync(
-            "./data/session.json",
-            JSON.stringify({
-              startedAt: Date.now()
-            }, null, 4)
-          );
-
-          const embed = new EmbedBuilder()
-            .setColor("#57F287")
-            .setTitle("🚨 State Line Roleplay | Session Startup")
-            .setDescription(
-              "The roleplay session is now officially **LIVE!**\n\n" +
-              "All members are expected to follow server rules, maintain realistic roleplay, and comply with staff instructions throughout the session."
-            )
-            .addFields({
-              name: "📋 Session Information",
-              value:
-                "🟢 **Roleplay is now live**\n" +
-                "📜 Follow all server rules\n" +
-                "🚗 Speed limits are enforced\n" +
-                "👮 Follow all staff instructions\n" +
-                "🚓 LEO, 🚑 Fire/EMS, 🚧 DOT & Civilians may begin operations\n" +
-                "📻 Keep radio communications professional"
-            })
-            .setFooter({
-              text: "State Line Roleplay"
-            })
-            .setTimestamp();
-
-          await channel.send({
-            content: "@here",
-            embeds: [embed]
-          });
-
-          return interaction.reply({
-            content: "✅ Session started.",
-            flags: 64
-          });
-        }
-
-        /*
-        ========================================
-        SESSION END
-        ========================================
-        */
-
-        if (action === "end") {
-
-          if (
-            !interaction.member.roles.cache.has(HOST_ROLE)
-          ) {
-            return interaction.reply({
-              content:
-                "❌ You don't have permission to use this command.",
-              flags: 64
-            });
-          }
-
-          let session;
-
-          try {
-
-            session = JSON.parse(
-              fs.readFileSync(
-                "./data/session.json",
-                "utf8"
-              )
-            );
-
-          } catch (error) {
-
-            return interaction.reply({
-              content:
-                "❌ No active session could be found.",
-              flags: 64
-            });
-          }
-
-          const duration =
-            Date.now() - session.startedAt;
-
-          const hours =
-            Math.floor(duration / 3600000);
-
-          const minutes =
-            Math.floor(
-              (duration % 3600000) / 60000
-            );
-
-          const sessionTime =
-            `${hours}h ${minutes}m`;
-
-          const embed = new EmbedBuilder()
-            .setColor("#ED4245")
-            .setTitle("🔴 State Line Roleplay | Session Ended")
-            .setDescription(
-              "Today's roleplay session has officially concluded.\n\n" +
-              "Thank you to everyone who participated and helped create an enjoyable experience for the community.\n\n" +
-              `⏱️ **Session Duration:** ${sessionTime}\n\n` +
-              "We appreciate everyone who joined and look forward to seeing you in the next session!"
-            )
-            .addFields({
-              name: "📊 Session Summary",
-              value:
-                `• Duration: **${sessionTime}**\n` +
-                "• Session Status: **Ended**\n" +
-                "• Thank you for playing!"
-            })
-            .setFooter({
-              text: "State Line Roleplay"
-            })
-            .setTimestamp();
-
-          await channel.send({
-            content: "@here",
-            embeds: [embed]
-          });
-
-          return interaction.reply({
-            content: `✅ Session ended. Duration: ${sessionTime}`,
-            flags: 64
-          });
-        }
-
-        /*
-        ========================================
-        PUBLIC SAFETY ON DUTY
-        ========================================
-        */
-
-        if (action === "ps-on") {
-
-          if (
-            !interaction.member.roles.cache.has(PS_ROLE)
-          ) {
-            return interaction.reply({
-              content:
-                "❌ You don't have permission to use this command.",
-              flags: 64
-            });
-          }
-
-          const embed = new EmbedBuilder()
-            .setColor("#5865F2")
-            .setTitle("🚔 Public Safety Status Update")
-            .setDescription(
-              "Public Safety is now officially **ON DUTY**.\n\n" +
-              "Departments are active and ready to respond to incidents. Please cooperate with all emergency services and continue to follow server rules throughout the session."
-            )
-            .addFields({
-              name: "🚨 Active Operations",
-              value:
-                "👮 Officers are now available for calls\n" +
-                "🚓 County patrols have begun\n" +
-                "🚑 Fire/EMS are available for emergencies\n" +
-                "🚧 DOT remains on standby"
-            })
-            .setFooter({
-              text: "State Line Roleplay"
-            })
-            .setTimestamp();
-
-          await channel.send({
-            content: "@here",
-            embeds: [embed]
-          });
-
-          return interaction.reply({
-            content: "✅ Public Safety is now ON DUTY.",
-            flags: 64
-          });
-        }
-
-        /*
-        ========================================
-        PUBLIC SAFETY OFF DUTY
-        ========================================
-        */
-
-        if (action === "ps-off") {
-
-          if (
-            !interaction.member.roles.cache.has(PS_ROLE)
-          ) {
-            return interaction.reply({
-              content:
-                "❌ You don't have permission to use this command.",
-              flags: 64
-            });
-          }
-
-          const embed = new EmbedBuilder()
-            .setColor("#ED4245")
-            .setTitle("🚔 Public Safety Status Update")
-            .setDescription(
-              "Public Safety is now officially **OFF DUTY**.\n\n" +
-              "Law Enforcement has concluded active patrols for this session. We thank everyone for their cooperation and contribution to a realistic roleplay experience."
-            )
-            .addFields({
-              name: "📋 Duty Status",
-              value:
-                "🔴 Officers have ended their patrols\n" +
-                "📋 Remaining departments continue normal operations\n" +
-                "🤝 Thank you for participating in today's RP session"
-            })
-            .setFooter({
-              text: "State Line Roleplay"
-            })
-            .setTimestamp();
-
-          await channel.send({
-            content: "@here",
-            embeds: [embed]
-          });
-
-          return interaction.reply({
-            content: "✅ Public Safety is now OFF DUTY.",
-            flags: 64
-          });
-        }
+      if (!channel) {
+        return interaction.reply({
+          content: "❌ Announcement channel could not be found.",
+          flags: 64
+        });
       }
+
+      const fs = require("fs");
+
       /*
-========================================
-/logs
-========================================
-*/
+      ========================================
+      SESSION STARTUP
+      ========================================
+      */
 
-      if (
-        interaction.isChatInputCommand() &&
-        interaction.commandName === "logs"
-      ) {
+      if (action === "startup") {
 
-        const type = interaction.options.getString("art");
-        const name = interaction.options.getString("name");
-        const reason = interaction.options.getString("reason");
-
-        const actionData = {
-          warn: {
-            title: "⚠️ Ingame Player Warned",
-            color: "#FEE75C",
-            action: "Warned By"
-          },
-
-          kick: {
-            title: "👢 Ingame Player Kicked",
-            color: "#E67E22",
-            action: "Kicked By"
-          },
-
-          ban: {
-            title: "🔨 Ingame Player Banned",
-            color: "#ED4245",
-            action: "Banned By"
-          }
-        };
-
-        const action = actionData[type];
-
-        if (!action) {
+        if (
+          !interaction.member.roles.cache.has(HOST_ROLE)
+        ) {
           return interaction.reply({
-            content: "❌ Invalid log type.",
+            content:
+              "❌ You don't have permission to use this command.",
             flags: 64
           });
         }
+
+        fs.writeFileSync(
+          "./data/session.json",
+          JSON.stringify({
+            startedAt: Date.now()
+          }, null, 4)
+        );
 
         const embed = new EmbedBuilder()
-          .setColor(action.color)
-          .setTitle(action.title)
-          .addFields(
-            {
-              name: "User",
-              value: `\`${name}\``
-            },
-            {
-              name: "Reason",
-              value: reason
-            },
-            {
-              name: `👤 ${action.action}`,
-              value: `${interaction.user} (\`${interaction.user.id}\`)`
-            }
+          .setColor("#57F287")
+          .setTitle("🚨 State Line Roleplay | Session Startup")
+          .setDescription(
+            "The roleplay session is now officially **LIVE!**\n\n" +
+            "All members are expected to follow server rules, maintain realistic roleplay, and comply with staff instructions throughout the session."
           )
+          .addFields({
+            name: "📋 Session Information",
+            value:
+              "🟢 **Roleplay is now live**\n" +
+              "📜 Follow all server rules\n" +
+              "🚗 Speed limits are enforced\n" +
+              "👮 Follow all staff instructions\n" +
+              "🚓 LEO, 🚑 Fire/EMS, 🚧 DOT & Civilians may begin operations\n" +
+              "📻 Keep radio communications professional"
+          })
           .setFooter({
-            text: "State Line Roleplay • Moderation"
+            text: "State Line Roleplay"
           })
           .setTimestamp();
 
-        const logChannel = interaction.guild.channels.cache.get(
-          MOD_LOG_CHANNEL
-        );
-
-        if (!logChannel) {
-          return interaction.reply({
-            content: "❌ The server log channel could not be found.",
-            flags: 64
-          });
-        }
-
-        await logChannel.send({
+        await channel.send({
+          content: "@here",
           embeds: [embed]
         });
 
         return interaction.reply({
-          content: `✅ ${type.toUpperCase()} log created for \`${name}\`.`,
+          content: "✅ Session started.",
           flags: 64
         });
       }
+
       /*
-========================================
-OPEN PATCHNOTE MODAL
-========================================
-*/
+      ========================================
+      SESSION END
+      ========================================
+      */
 
-      if (interaction.isButton() && interaction.customId === "patchnote_open") {
-        const modal = new ModalBuilder()
-          .setCustomId("patchnote_create")
-          .setTitle("Create Patchnote");
+      if (action === "end") {
 
-        const titleInput = new TextInputBuilder()
-          .setCustomId("patchnote_title")
-          .setLabel("Patchnote Title")
-          .setPlaceholder("Patchnote #BlaBla")
-          .setStyle(TextInputStyle.Short)
-          .setRequired(true)
-          .setMaxLength(256);
-
-        const contentInput = new TextInputBuilder()
-          .setCustomId("patchnote_content")
-          .setLabel("Patchnote")
-          .setPlaceholder("Write your complete patchnote here...")
-          .setStyle(TextInputStyle.Paragraph)
-          .setRequired(true)
-          .setMaxLength(4000);
-
-        modal.addComponents(
-          new ActionRowBuilder().addComponents(titleInput),
-          new ActionRowBuilder().addComponents(contentInput),
-        );
-
-        return interaction.showModal(modal);
-      }
-      /*
-========================================
-PATCHNOTE CREATE
-========================================
-*/
-
-      if (
-        interaction.isModalSubmit() &&
-        interaction.customId === "patchnote_create"
-      ) {
-        const title = interaction.fields.getTextInputValue("patchnote_title");
-
-        const content =
-          interaction.fields.getTextInputValue("patchnote_content");
-
-        const channel = await client.channels
-          .fetch(PATCHNOTES_CHANNEL)
-          .catch(() => null);
-
-        if (!channel) {
+        if (
+          !interaction.member.roles.cache.has(HOST_ROLE)
+        ) {
           return interaction.reply({
-            content: "❌ The patchnotes channel could not be found.",
-            flags: 64,
+            content:
+              "❌ You don't have permission to use this command.",
+            flags: 64
+          });
+        }
+
+        let session;
+
+        try {
+
+          session = JSON.parse(
+            fs.readFileSync(
+              "./data/session.json",
+              "utf8"
+            )
+          );
+
+        } catch (error) {
+
+          return interaction.reply({
+            content:
+              "❌ No active session could be found.",
+            flags: 64
+          });
+        }
+
+        const duration =
+          Date.now() - session.startedAt;
+
+        const hours =
+          Math.floor(duration / 3600000);
+
+        const minutes =
+          Math.floor(
+            (duration % 3600000) / 60000
+          );
+
+        const sessionTime =
+          `${hours}h ${minutes}m`;
+
+        const embed = new EmbedBuilder()
+          .setColor("#ED4245")
+          .setTitle("🔴 State Line Roleplay | Session Ended")
+          .setDescription(
+            "Today's roleplay session has officially concluded.\n\n" +
+            "Thank you to everyone who participated and helped create an enjoyable experience for the community.\n\n" +
+            `⏱️ **Session Duration:** ${sessionTime}\n\n` +
+            "We appreciate everyone who joined and look forward to seeing you in the next session!"
+          )
+          .addFields({
+            name: "📊 Session Summary",
+            value:
+              `• Duration: **${sessionTime}**\n` +
+              "• Session Status: **Ended**\n" +
+              "• Thank you for playing!"
+          })
+          .setFooter({
+            text: "State Line Roleplay"
+          })
+          .setTimestamp();
+
+        await channel.send({
+          content: "@here",
+          embeds: [embed]
+        });
+
+        return interaction.reply({
+          content: `✅ Session ended. Duration: ${sessionTime}`,
+          flags: 64
+        });
+      }
+
+      /*
+      ========================================
+      PUBLIC SAFETY ON DUTY
+      ========================================
+      */
+
+      if (action === "ps-on") {
+
+        if (
+          !interaction.member.roles.cache.has(PS_ROLE)
+        ) {
+          return interaction.reply({
+            content:
+              "❌ You don't have permission to use this command.",
+            flags: 64
           });
         }
 
         const embed = new EmbedBuilder()
           .setColor("#5865F2")
-          .setTitle(`# ${title}`)
-          .setDescription(content)
+          .setTitle("🚔 Public Safety Status Update")
+          .setDescription(
+            "Public Safety is now officially **ON DUTY**.\n\n" +
+            "Departments are active and ready to respond to incidents. Please cooperate with all emergency services and continue to follow server rules throughout the session."
+          )
+          .addFields({
+            name: "🚨 Active Operations",
+            value:
+              "👮 Officers are now available for calls\n" +
+              "🚓 County patrols have begun\n" +
+              "🚑 Fire/EMS are available for emergencies\n" +
+              "🚧 DOT remains on standby"
+          })
           .setFooter({
-            text: `Patchnote written by ${interaction.user.username}`,
+            text: "State Line Roleplay"
           })
           .setTimestamp();
 
         await channel.send({
-          content: `Patchnote written by ${interaction.user}`,
-          embeds: [embed],
+          content: "@here",
+          embeds: [embed]
         });
 
         return interaction.reply({
-          content: `✅ Patchnote posted in ${channel}.`,
-          flags: 64,
+          content: "✅ Public Safety is now ON DUTY.",
+          flags: 64
         });
       }
 
       /*
+      ========================================
+      PUBLIC SAFETY OFF DUTY
+      ========================================
+      */
+
+      if (action === "ps-off") {
+
+        if (
+          !interaction.member.roles.cache.has(PS_ROLE)
+        ) {
+          return interaction.reply({
+            content:
+              "❌ You don't have permission to use this command.",
+            flags: 64
+          });
+        }
+
+        const embed = new EmbedBuilder()
+          .setColor("#ED4245")
+          .setTitle("🚔 Public Safety Status Update")
+          .setDescription(
+            "Public Safety is now officially **OFF DUTY**.\n\n" +
+            "Law Enforcement has concluded active patrols for this session. We thank everyone for their cooperation and contribution to a realistic roleplay experience."
+          )
+          .addFields({
+            name: "📋 Duty Status",
+            value:
+              "🔴 Officers have ended their patrols\n" +
+              "📋 Remaining departments continue normal operations\n" +
+              "🤝 Thank you for participating in today's RP session"
+          })
+          .setFooter({
+            text: "State Line Roleplay"
+          })
+          .setTimestamp();
+
+        await channel.send({
+          content: "@here",
+          embeds: [embed]
+        });
+
+        return interaction.reply({
+          content: "✅ Public Safety is now OFF DUTY.",
+          flags: 64
+        });
+      }
+    }
+    /*
+========================================
+/logs
+========================================
+*/
+
+    if (
+      interaction.isChatInputCommand() &&
+      interaction.commandName === "logs"
+    ) {
+
+      const type = interaction.options.getString("art");
+      const name = interaction.options.getString("name");
+      const reason = interaction.options.getString("reason");
+
+      const actionData = {
+        warn: {
+          title: "⚠️ Ingame Player Warned",
+          color: "#FEE75C",
+          action: "Warned By"
+        },
+
+        kick: {
+          title: "👢 Ingame Player Kicked",
+          color: "#E67E22",
+          action: "Kicked By"
+        },
+
+        ban: {
+          title: "🔨 Ingame Player Banned",
+          color: "#ED4245",
+          action: "Banned By"
+        }
+      };
+
+      const action = actionData[type];
+
+      if (!action) {
+        return interaction.reply({
+          content: "❌ Invalid log type.",
+          flags: 64
+        });
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor(action.color)
+        .setTitle(action.title)
+        .addFields(
+          {
+            name: "User",
+            value: `\`${name}\``
+          },
+          {
+            name: "Reason",
+            value: reason
+          },
+          {
+            name: `👤 ${action.action}`,
+            value: `${interaction.user} (\`${interaction.user.id}\`)`
+          }
+        )
+        .setFooter({
+          text: "State Line Roleplay • Moderation"
+        })
+        .setTimestamp();
+
+      const logChannel = interaction.guild.channels.cache.get(
+        MOD_LOG_CHANNEL
+      );
+
+      if (!logChannel) {
+        return interaction.reply({
+          content: "❌ The server log channel could not be found.",
+          flags: 64
+        });
+      }
+
+      await logChannel.send({
+        embeds: [embed]
+      });
+
+      return interaction.reply({
+        content: `✅ ${type.toUpperCase()} log created for \`${name}\`.`,
+        flags: 64
+      });
+    }
+    /*
+========================================
+OPEN PATCHNOTE MODAL
+========================================
+*/
+
+    if (interaction.isButton() && interaction.customId === "patchnote_open") {
+      const modal = new ModalBuilder()
+        .setCustomId("patchnote_create")
+        .setTitle("Create Patchnote");
+
+      const titleInput = new TextInputBuilder()
+        .setCustomId("patchnote_title")
+        .setLabel("Patchnote Title")
+        .setPlaceholder("Patchnote #BlaBla")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setMaxLength(256);
+
+      const contentInput = new TextInputBuilder()
+        .setCustomId("patchnote_content")
+        .setLabel("Patchnote")
+        .setPlaceholder("Write your complete patchnote here...")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+        .setMaxLength(4000);
+
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(titleInput),
+        new ActionRowBuilder().addComponents(contentInput),
+      );
+
+      return interaction.showModal(modal);
+    }
+    /*
+========================================
+PATCHNOTE CREATE
+========================================
+*/
+
+    if (
+      interaction.isModalSubmit() &&
+      interaction.customId === "patchnote_create"
+    ) {
+      const title = interaction.fields.getTextInputValue("patchnote_title");
+
+      const content =
+        interaction.fields.getTextInputValue("patchnote_content");
+
+      const channel = await client.channels
+        .fetch(PATCHNOTES_CHANNEL)
+        .catch(() => null);
+
+      if (!channel) {
+        return interaction.reply({
+          content: "❌ The patchnotes channel could not be found.",
+          flags: 64,
+        });
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor("#5865F2")
+        .setTitle(`# ${title}`)
+        .setDescription(content)
+        .setFooter({
+          text: `Patchnote written by ${interaction.user.username}`,
+        })
+        .setTimestamp();
+
+      await channel.send({
+        content: `Patchnote written by ${interaction.user}`,
+        embeds: [embed],
+      });
+
+      return interaction.reply({
+        content: `✅ Patchnote posted in ${channel}.`,
+        flags: 64,
+      });
+    }
+
+    /*
 ========================================
 TICKET OPEN
 ========================================
 */
 
-      if (
-        interaction.isButton() &&
-        interaction.customId.startsWith("ticket_open_")
-      ) {
-        const type = interaction.customId.replace("ticket_open_", "");
+    if (
+      interaction.isButton() &&
+      interaction.customId.startsWith("ticket_open_")
+    ) {
+      const type = interaction.customId.replace("ticket_open_", "");
 
-        const system = TICKET_SYSTEMS[type];
+      const system = TICKET_SYSTEMS[type];
 
-        if (!system) {
-          return interaction.reply({
-            content: "❌ This ticket system is unavailable.",
-            flags: 64,
-          });
-        }
-
-        await interaction.deferReply({
+      if (!system) {
+        return interaction.reply({
+          content: "❌ This ticket system is unavailable.",
           flags: 64,
         });
+      }
 
-        /*
-    ========================================
-    CHECK EXISTING TICKET
-    ========================================
-    */
+      await interaction.deferReply({
+        flags: 64,
+      });
 
-        const existingTicket = interaction.guild.channels.cache.find(
-          (channel) =>
-            channel.type === ChannelType.GuildText &&
-            channel.topic === `ticket:${type}:${interaction.user.id}`,
-        );
+      /*
+  ========================================
+  CHECK EXISTING TICKET
+  ========================================
+  */
 
-        if (existingTicket) {
-          return interaction.editReply({
-            content: `❌ You already have an open ticket: ${existingTicket}`,
-          });
-        }
+      const existingTicket = interaction.guild.channels.cache.find(
+        (channel) =>
+          channel.type === ChannelType.GuildText &&
+          channel.topic === `ticket:${type}:${interaction.user.id}`,
+      );
 
-        /*
-    ========================================
-    CREATE TICKET
-    ========================================
-    */
-
-        const ticketChannel = await interaction.guild.channels.create({
-          name: `${type === "banAppeals" ? "ban-appeal" : type === "staffHelp" ? "staff-help" : "ticket"}-${interaction.user.username}`
-            .toLowerCase()
-            .replace(/[^a-z0-9-]/g, "")
-            .slice(0, 90),
-
-          type: ChannelType.GuildText,
-
-          parent: system.category,
-
-          topic: `ticket:${type}:${interaction.user.id}`,
-
-          permissionOverwrites: [
-            {
-              id: interaction.guild.id,
-              deny: [PermissionFlagsBits.ViewChannel],
-            },
-            {
-              id: interaction.user.id,
-              allow: [
-                PermissionFlagsBits.ViewChannel,
-                PermissionFlagsBits.SendMessages,
-                PermissionFlagsBits.ReadMessageHistory,
-                PermissionFlagsBits.AttachFiles,
-                PermissionFlagsBits.EmbedLinks,
-              ],
-            },
-            {
-              id: system.staffRole,
-              allow: [
-                PermissionFlagsBits.ViewChannel,
-                PermissionFlagsBits.SendMessages,
-                PermissionFlagsBits.ReadMessageHistory,
-                PermissionFlagsBits.AttachFiles,
-                PermissionFlagsBits.EmbedLinks,
-                PermissionFlagsBits.ManageMessages,
-              ],
-            },
-          ],
-        });
-
-        /*
-    ========================================
-    TICKET EMBED
-    ========================================
-    */
-
-        const ticketInfo = {
-          tickets: {
-            title: "🎫 Support Ticket",
-            description:
-              "Thank you for contacting State Line Roleplay support.\n\n" +
-              "Please explain your issue in as much detail as possible.",
-          },
-
-          banAppeals: {
-            title: "⚖️ Ban Appeal",
-            description:
-              "Please provide the following information:\n\n" +
-              "• Why you believe the ban was unfair\n" +
-              "• What happened\n" +
-              "• Any relevant evidence\n\n" +
-              "Please be honest and respectful.",
-          },
-
-          staffHelp: {
-            title: "🛡️ Staff Help",
-            description:
-              "Please explain what you need assistance with.\n\n" +
-              "Only the appropriate staff team can see this ticket.",
-          },
-        };
-
-        const info = ticketInfo[type];
-
-        const embed = new EmbedBuilder()
-          .setColor(
-            type === "banAppeals"
-              ? "#ED4245"
-              : type === "staffHelp"
-                ? "#FEE75C"
-                : "#5865F2",
-          )
-          .setTitle(info.title)
-          .setDescription(`Hello ${interaction.user}!\n\n` + info.description)
-          .setFooter({
-            text: "State Line Roleplay • Tickets",
-          })
-          .setTimestamp();
-
-        /*
-    ========================================
-    CLOSE BUTTON
-    ========================================
-    */
-
-        const closeButton = new ButtonBuilder()
-          .setCustomId(`ticket_close_${type}`)
-          .setLabel("Close Ticket")
-          .setEmoji("🔒")
-          .setStyle(ButtonStyle.Danger);
-
-        const row = new ActionRowBuilder().addComponents(closeButton);
-
-        await ticketChannel.send({
-          content: `${interaction.user} <@&${system.staffRole}>`,
-          embeds: [embed],
-          components: [row],
-        });
-
+      if (existingTicket) {
         return interaction.editReply({
-          content: `✅ Your ticket has been created: ${ticketChannel}`,
+          content: `❌ You already have an open ticket: ${existingTicket}`,
         });
       }
+
       /*
+  ========================================
+  CREATE TICKET
+  ========================================
+  */
+
+      const ticketChannel = await interaction.guild.channels.create({
+        name: `${type === "banAppeals" ? "ban-appeal" : type === "staffHelp" ? "staff-help" : "ticket"}-${interaction.user.username}`
+          .toLowerCase()
+          .replace(/[^a-z0-9-]/g, "")
+          .slice(0, 90),
+
+        type: ChannelType.GuildText,
+
+        parent: system.category,
+
+        topic: `ticket:${type}:${interaction.user.id}`,
+
+        permissionOverwrites: [
+          {
+            id: interaction.guild.id,
+            deny: [PermissionFlagsBits.ViewChannel],
+          },
+          {
+            id: interaction.user.id,
+            allow: [
+              PermissionFlagsBits.ViewChannel,
+              PermissionFlagsBits.SendMessages,
+              PermissionFlagsBits.ReadMessageHistory,
+              PermissionFlagsBits.AttachFiles,
+              PermissionFlagsBits.EmbedLinks,
+            ],
+          },
+          {
+            id: system.staffRole,
+            allow: [
+              PermissionFlagsBits.ViewChannel,
+              PermissionFlagsBits.SendMessages,
+              PermissionFlagsBits.ReadMessageHistory,
+              PermissionFlagsBits.AttachFiles,
+              PermissionFlagsBits.EmbedLinks,
+              PermissionFlagsBits.ManageMessages,
+            ],
+          },
+        ],
+      });
+
+      /*
+  ========================================
+  TICKET EMBED
+  ========================================
+  */
+
+      const ticketInfo = {
+        tickets: {
+          title: "🎫 Support Ticket",
+          description:
+            "Thank you for contacting State Line Roleplay support.\n\n" +
+            "Please explain your issue in as much detail as possible.",
+        },
+
+        banAppeals: {
+          title: "⚖️ Ban Appeal",
+          description:
+            "Please provide the following information:\n\n" +
+            "• Why you believe the ban was unfair\n" +
+            "• What happened\n" +
+            "• Any relevant evidence\n\n" +
+            "Please be honest and respectful.",
+        },
+
+        staffHelp: {
+          title: "🛡️ Staff Help",
+          description:
+            "Please explain what you need assistance with.\n\n" +
+            "Only the appropriate staff team can see this ticket.",
+        },
+      };
+
+      const info = ticketInfo[type];
+
+      const embed = new EmbedBuilder()
+        .setColor(
+          type === "banAppeals"
+            ? "#ED4245"
+            : type === "staffHelp"
+              ? "#FEE75C"
+              : "#5865F2",
+        )
+        .setTitle(info.title)
+        .setDescription(`Hello ${interaction.user}!\n\n` + info.description)
+        .setFooter({
+          text: "State Line Roleplay • Tickets",
+        })
+        .setTimestamp();
+
+      /*
+  ========================================
+  CLOSE BUTTON
+  ========================================
+  */
+
+      const closeButton = new ButtonBuilder()
+        .setCustomId(`ticket_close_${type}`)
+        .setLabel("Close Ticket")
+        .setEmoji("🔒")
+        .setStyle(ButtonStyle.Danger);
+
+      const row = new ActionRowBuilder().addComponents(closeButton);
+
+      await ticketChannel.send({
+        content: `${interaction.user} <@&${system.staffRole}>`,
+        embeds: [embed],
+        components: [row],
+      });
+
+      return interaction.editReply({
+        content: `✅ Your ticket has been created: ${ticketChannel}`,
+      });
+    }
+    /*
 ========================================
 CLOSE TICKET
 ========================================
 */
 
-      if (
-        interaction.isButton() &&
-        interaction.customId.startsWith("ticket_close_")
-      ) {
+    if (
+      interaction.isButton() &&
+      interaction.customId.startsWith("ticket_close_")
+    ) {
+      console.log(
+        "TICKET CLOSE CLICKED:",
+        interaction.customId,
+        interaction.user.tag
+      );
+
+      /*
+      ========================================
+      ACKNOWLEDGE INTERACTION IMMEDIATELY
+      ========================================
+      */
+
+      try {
+        await interaction.deferReply({
+          flags: 64,
+        });
+      } catch (error) {
+        console.error(
+          "FAILED TO DEFER TICKET CLOSE:",
+          error
+        );
+
+        return;
+      }
+
+      try {
+        const type = interaction.customId.replace(
+          "ticket_close_",
+          ""
+        );
+
+        console.log("TICKET CLOSE TYPE:", type);
+
+        const system = TICKET_SYSTEMS[type];
+
+        if (!system) {
+          return interaction.editReply({
+            content:
+              "❌ This ticket system is unavailable.",
+          });
+        }
+
+        /*
+        ========================================
+        PERMISSION CHECK
+        ========================================
+        */
+
+        if (
+          !interaction.member.roles.cache.has(
+            system.staffRole
+          )
+        ) {
+          return interaction.editReply({
+            content:
+              "❌ Only ticket staff can close this ticket.",
+          });
+        }
+
+        console.log("TICKET CLOSE: Permission OK");
+
+        const ticketChannel = interaction.channel;
+
+        /*
+        ========================================
+        FIND CREATOR
+        ========================================
+        */
+
+        let creator = null;
+
+        if (ticketChannel.topic) {
+          const match = ticketChannel.topic.match(
+            /^ticket:[^:]+:(\d+)$/
+          );
+
+          if (match) {
+            creator = await client.users
+              .fetch(match[1])
+              .catch(() => null);
+          }
+        }
+
         console.log(
-          "TICKET CLOSE CLICKED:",
-          interaction.customId,
-          interaction.user.tag
+          "TICKET CLOSE: Creator:",
+          creator?.tag || "Unknown"
         );
 
         /*
         ========================================
-        ACKNOWLEDGE INTERACTION IMMEDIATELY
+        CREATE TRANSCRIPT
         ========================================
         */
 
-        try {
-          await interaction.deferReply({
-            flags: 64,
-          });
-        } catch (error) {
-          console.error(
-            "FAILED TO DEFER TICKET CLOSE:",
-            error
+        console.log(
+          "TICKET CLOSE: Creating transcript..."
+        );
+
+        const transcript =
+          await createTicketTranscript(
+            ticketChannel,
+            {
+              ticketType: system.name,
+              creator,
+              closedBy: interaction.user,
+            }
           );
 
-          return;
+        console.log(
+          "TICKET CLOSE: Transcript created"
+        );
+
+        /*
+        ========================================
+        TRANSCRIPT CHANNEL
+        ========================================
+        */
+
+        const transcriptChannel =
+          await client.channels
+            .fetch(TICKET_TRANSCRIPT_CHANNEL)
+            .catch(() => null);
+
+        if (!transcriptChannel) {
+          return interaction.editReply({
+            content:
+              "❌ Transcript channel could not be found. The ticket was NOT deleted.",
+          });
         }
 
-        try {
-          const type = interaction.customId.replace(
-            "ticket_close_",
-            ""
-          );
+        console.log(
+          "TICKET CLOSE: Transcript channel found"
+        );
 
-          console.log("TICKET CLOSE TYPE:", type);
+        /*
+        ========================================
+        SEND TRANSCRIPT
+        ========================================
+        */
 
-          const system = TICKET_SYSTEMS[type];
-
-          if (!system) {
-            return interaction.editReply({
-              content:
-                "❌ This ticket system is unavailable.",
-            });
-          }
-
-          /*
-          ========================================
-          PERMISSION CHECK
-          ========================================
-          */
-
-          if (
-            !interaction.member.roles.cache.has(
-              system.staffRole
-            )
-          ) {
-            return interaction.editReply({
-              content:
-                "❌ Only ticket staff can close this ticket.",
-            });
-          }
-
-          console.log("TICKET CLOSE: Permission OK");
-
-          const ticketChannel = interaction.channel;
-
-          /*
-          ========================================
-          FIND CREATOR
-          ========================================
-          */
-
-          let creator = null;
-
-          if (ticketChannel.topic) {
-            const match = ticketChannel.topic.match(
-              /^ticket:[^:]+:(\d+)$/
-            );
-
-            if (match) {
-              creator = await client.users
-                .fetch(match[1])
-                .catch(() => null);
-            }
-          }
-
-          console.log(
-            "TICKET CLOSE: Creator:",
-            creator?.tag || "Unknown"
-          );
-
-          /*
-          ========================================
-          CREATE TRANSCRIPT
-          ========================================
-          */
-
-          console.log(
-            "TICKET CLOSE: Creating transcript..."
-          );
-
-          const transcript =
-            await createTicketTranscript(
-              ticketChannel,
+        const transcriptEmbed =
+          new EmbedBuilder()
+            .setColor("#5865F2")
+            .setTitle("🔒 Ticket Closed")
+            .addFields(
               {
-                ticketType: system.name,
-                creator,
-                closedBy: interaction.user,
-              }
-            );
-
-          console.log(
-            "TICKET CLOSE: Transcript created"
-          );
-
-          /*
-          ========================================
-          TRANSCRIPT CHANNEL
-          ========================================
-          */
-
-          const transcriptChannel =
-            await client.channels
-              .fetch(TICKET_TRANSCRIPT_CHANNEL)
-              .catch(() => null);
-
-          if (!transcriptChannel) {
-            return interaction.editReply({
-              content:
-                "❌ Transcript channel could not be found. The ticket was NOT deleted.",
-            });
-          }
-
-          console.log(
-            "TICKET CLOSE: Transcript channel found"
-          );
-
-          /*
-          ========================================
-          SEND TRANSCRIPT
-          ========================================
-          */
-
-          const transcriptEmbed =
-            new EmbedBuilder()
-              .setColor("#5865F2")
-              .setTitle("🔒 Ticket Closed")
-              .addFields(
-                {
-                  name: "Ticket",
-                  value: `\`${ticketChannel.name}\``,
-                  inline: true,
-                },
-                {
-                  name: "Type",
-                  value: system.name,
-                  inline: true,
-                },
-                {
-                  name: "Created By",
-                  value: creator
-                    ? `<@${creator.id}>`
-                    : "Unknown",
-                  inline: true,
-                },
-                {
-                  name: "Closed By",
-                  value: `<@${interaction.user.id}>`,
-                  inline: true,
-                }
-              )
-              .setTimestamp();
-
-          await transcriptChannel.send({
-            embeds: [transcriptEmbed],
-            files: [
-              {
-                attachment: transcript,
-                name: `${ticketChannel.name}.pdf`,
+                name: "Ticket",
+                value: `\`${ticketChannel.name}\``,
+                inline: true,
               },
-            ],
-          });
+              {
+                name: "Type",
+                value: system.name,
+                inline: true,
+              },
+              {
+                name: "Created By",
+                value: creator
+                  ? `<@${creator.id}>`
+                  : "Unknown",
+                inline: true,
+              },
+              {
+                name: "Closed By",
+                value: `<@${interaction.user.id}>`,
+                inline: true,
+              }
+            )
+            .setTimestamp();
 
-          console.log(
-            "TICKET CLOSE: Transcript sent"
-          );
+        await transcriptChannel.send({
+          embeds: [transcriptEmbed],
+          files: [
+            {
+              attachment: transcript,
+              name: `${ticketChannel.name}.pdf`,
+            },
+          ],
+        });
 
-          /*
-          ========================================
-          DELETE TICKET
-          ========================================
-          */
+        console.log(
+          "TICKET CLOSE: Transcript sent"
+        );
 
+        /*
+        ========================================
+        DELETE TICKET
+        ========================================
+        */
+
+        await interaction.editReply({
+          content:
+            "🔒 Ticket closed and transcript archived.",
+        });
+
+        console.log(
+          "TICKET CLOSE: Deleting channel..."
+        );
+
+        await ticketChannel.delete(
+          "Ticket closed and transcript archived."
+        );
+
+      } catch (error) {
+        console.error(
+          "TICKET CLOSE ERROR:",
+          error
+        );
+
+        try {
           await interaction.editReply({
             content:
-              "🔒 Ticket closed and transcript archived.",
+              "❌ Something went wrong while closing this ticket. The ticket was NOT deleted.",
           });
-
-          console.log(
-            "TICKET CLOSE: Deleting channel..."
-          );
-
-          await ticketChannel.delete(
-            "Ticket closed and transcript archived."
-          );
-
-        } catch (error) {
+        } catch (replyError) {
           console.error(
-            "TICKET CLOSE ERROR:",
-            error
+            "FAILED TO EDIT CLOSE REPLY:",
+            replyError
           );
-
-          try {
-            await interaction.editReply({
-              content:
-                "❌ Something went wrong while closing this ticket. The ticket was NOT deleted.",
-            });
-          } catch (replyError) {
-            console.error(
-              "FAILED TO EDIT CLOSE REPLY:",
-              replyError
-            );
-          }
         }
-
       }
-      /*
+
+    }
+    /*
 ========================================
 CONTINUE APPLICATION
 ========================================
 */
 
-      if (
-        interaction.isButton() &&
-        interaction.customId.startsWith("application_continue_")
-      ) {
-        const userId = interaction.customId.replace(
-          "application_continue_",
-          "",
-        );
+    if (
+      interaction.isButton() &&
+      interaction.customId.startsWith("application_continue_")
+    ) {
+      const userId = interaction.customId.replace(
+        "application_continue_",
+        "",
+      );
 
-        if (interaction.user.id !== userId) {
-          return interaction.reply({
-            content: "❌ This is not your application.",
-            flags: 64,
-          });
-        }
-
-        const state = activeApplications.get(userId);
-
-        if (!state) {
-          return interaction.reply({
-            content:
-              "❌ Your application session could not be found.\n\n" +
-              "Please use `!continueapplication` again.",
-            flags: 64,
-          });
-        }
-
-        return showQuestion(interaction, userId);
-      }
-
-      /*
-            ========================================
-            APPLICATION DEPARTMENT BUTTON
-            ========================================
-            */
-
-      if (
-        interaction.isButton() &&
-        interaction.customId.startsWith("application_") &&
-        !interaction.customId.startsWith("application_answer_") &&
-        !interaction.customId.startsWith("application_review_") &&
-        !interaction.customId.startsWith("application_accept_") &&
-        !interaction.customId.startsWith("application_deny_")
-      ) {
-        const type = interaction.customId.replace("application_", "");
-
-        const application = applications[type];
-
-        if (!application) {
-          return interaction.reply({
-            content: "❌ This application is currently unavailable.",
-            flags: 64,
-          });
-        }
-
-        if (!application.information || !application.questions) {
-          return interaction.reply({
-            content: "❌ This application is currently unavailable.",
-            flags: 64,
-          });
-        }
-
-        if (activeApplications.has(interaction.user.id)) {
-          return interaction.reply({
-            content:
-              "❌ You already have an application in progress. Please finish it first.",
-            flags: 64,
-          });
-        }
-
-        /*
-                CREATE APPLICATION SESSION
-                */
-
-        activeApplications.set(interaction.user.id, {
-          type,
-          answers: {},
-          currentIndex: 0,
+      if (interaction.user.id !== userId) {
+        return interaction.reply({
+          content: "❌ This is not your application.",
+          flags: 64,
         });
-        saveApplicationSessions();
-        /*
-                SHOW FIRST QUESTION
-                */
+      }
 
-        return showQuestion(interaction, interaction.user.id);
+      const state = activeApplications.get(userId);
+
+      if (!state) {
+        return interaction.reply({
+          content:
+            "❌ Your application session could not be found.\n\n" +
+            "Please use `!continueapplication` again.",
+          flags: 64,
+        });
+      }
+
+      return showQuestion(interaction, userId);
+    }
+
+    /*
+          ========================================
+          APPLICATION DEPARTMENT BUTTON
+          ========================================
+          */
+
+    if (
+      interaction.isButton() &&
+      interaction.customId.startsWith("application_") &&
+      !interaction.customId.startsWith("application_answer_") &&
+      !interaction.customId.startsWith("application_review_") &&
+      !interaction.customId.startsWith("application_accept_") &&
+      !interaction.customId.startsWith("application_deny_")
+    ) {
+      const type = interaction.customId.replace("application_", "");
+
+      const application = applications[type];
+
+      if (!application) {
+        return interaction.reply({
+          content: "❌ This application is currently unavailable.",
+          flags: 64,
+        });
+      }
+
+      if (!application.information || !application.questions) {
+        return interaction.reply({
+          content: "❌ This application is currently unavailable.",
+          flags: 64,
+        });
+      }
+
+      if (activeApplications.has(interaction.user.id)) {
+        return interaction.reply({
+          content:
+            "❌ You already have an application in progress. Please finish it first.",
+          flags: 64,
+        });
       }
 
       /*
-            ========================================
-            ANSWER QUESTION BUTTON
-            ========================================
-            */
-      if (
-        interaction.isButton() &&
-        interaction.customId.startsWith("application_answer_")
-      ) {
-        const parts = interaction.customId.split("_");
+              CREATE APPLICATION SESSION
+              */
 
-        const userId = parts[2];
-        const index = parseInt(parts[3]);
+      activeApplications.set(interaction.user.id, {
+        type,
+        answers: {},
+        currentIndex: 0,
+      });
+      saveApplicationSessions();
+      /*
+              SHOW FIRST QUESTION
+              */
 
-        if (interaction.user.id !== userId) {
-          return interaction.reply({
-            content: "❌ This is not your application.",
-            flags: 64,
-          });
-        }
+      return showQuestion(interaction, interaction.user.id);
+    }
 
-        const state = activeApplications.get(userId);
+    /*
+          ========================================
+          ANSWER QUESTION BUTTON
+          ========================================
+          */
+    if (
+      interaction.isButton() &&
+      interaction.customId.startsWith("application_answer_")
+    ) {
+      const parts = interaction.customId.split("_");
 
-        if (!state) {
-          return interaction.reply({
-            content:
-              "❌ Your application session has expired. Please start again with `!apply`.",
-            flags: 64,
-          });
-        }
+      const userId = parts[2];
+      const index = parseInt(parts[3]);
 
-        const application = applications[state.type];
-
-        if (!application) {
-          return interaction.reply({
-            content: "❌ This application is currently unavailable.",
-            flags: 64,
-          });
-        }
-
-        const fields = getAllFields(application);
-        const field = fields[index];
-
-        if (!field) {
-          return interaction.reply({
-            content: "❌ This question could not be found.",
-            flags: 64,
-          });
-        }
-
-        const modal = new ModalBuilder()
-          .setCustomId(`application_answer_${userId}_${index}`)
-          .setTitle(`Question ${index + 1}`);
-
-        const input = new TextInputBuilder()
-          .setCustomId("answer")
-          .setLabel(field.label || `Question ${index + 1}`)
-          .setPlaceholder("Write your answer here...")
-          .setStyle(TextInputStyle.Paragraph)
-          .setRequired(true)
-          .setMaxLength(4000);
-
-        modal.addComponents(new ActionRowBuilder().addComponents(input));
-
-        return interaction.showModal(modal);
+      if (interaction.user.id !== userId) {
+        return interaction.reply({
+          content: "❌ This is not your application.",
+          flags: 64,
+        });
       }
 
-      /*
+      const state = activeApplications.get(userId);
+
+      if (!state) {
+        return interaction.reply({
+          content:
+            "❌ Your application session has expired. Please start again with `!apply`.",
+          flags: 64,
+        });
+      }
+
+      const application = applications[state.type];
+
+      if (!application) {
+        return interaction.reply({
+          content: "❌ This application is currently unavailable.",
+          flags: 64,
+        });
+      }
+
+      const fields = getAllFields(application);
+      const field = fields[index];
+
+      if (!field) {
+        return interaction.reply({
+          content: "❌ This question could not be found.",
+          flags: 64,
+        });
+      }
+
+      const modal = new ModalBuilder()
+        .setCustomId(`application_answer_${userId}_${index}`)
+        .setTitle(`Question ${index + 1}`);
+
+      const input = new TextInputBuilder()
+        .setCustomId("answer")
+        .setLabel(field.label || `Question ${index + 1}`)
+        .setPlaceholder("Write your answer here...")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+        .setMaxLength(4000);
+
+      modal.addComponents(new ActionRowBuilder().addComponents(input));
+
+      return interaction.showModal(modal);
+    }
+
+    /*
 ========================================
 APPLICATION REVIEW BUTTON
 ========================================
 */
 
-      if (
-        interaction.isButton() &&
-        interaction.customId.startsWith("application_review_")
-      ) {
-        const applicantId = interaction.customId.replace(
-          "application_review_",
-          "",
-        );
+    if (
+      interaction.isButton() &&
+      interaction.customId.startsWith("application_review_")
+    ) {
+      const applicantId = interaction.customId.replace(
+        "application_review_",
+        "",
+      );
 
-        const applicationMessage = interaction.message;
+      const applicationMessage = interaction.message;
 
-        let applicationName = "Application";
+      let applicationName = "Application";
 
-        if (applicationMessage?.embeds?.length) {
-          const title = applicationMessage.embeds[0].title;
+      if (applicationMessage?.embeds?.length) {
+        const title = applicationMessage.embeds[0].title;
 
-          if (title) {
-            applicationName = title
-              .replace("📋", "")
-              .replace("🚓", "")
-              .replace("🔥", "")
-              .replace("🚑", "")
-              .replace("🚧", "")
-              .replace("New ", "")
-              .replace(" Application", "")
-              .trim();
-          }
+        if (title) {
+          applicationName = title
+            .replace("📋", "")
+            .replace("🚓", "")
+            .replace("🔥", "")
+            .replace("🚑", "")
+            .replace("🚧", "")
+            .replace("New ", "")
+            .replace(" Application", "")
+            .trim();
         }
+      }
 
-        const modal = new ModalBuilder()
-          .setCustomId(`application_review_submit_${applicantId}`)
-          .setTitle("Application Review");
+      const modal = new ModalBuilder()
+        .setCustomId(`application_review_submit_${applicantId}`)
+        .setTitle("Application Review");
 
-        const scoreInput = new TextInputBuilder()
-          .setCustomId("review_score")
-          .setLabel("Application Score (0-100)")
-          .setPlaceholder("Example: 87")
-          .setStyle(TextInputStyle.Short)
-          .setRequired(true)
-          .setMinLength(1)
-          .setMaxLength(3);
+      const scoreInput = new TextInputBuilder()
+        .setCustomId("review_score")
+        .setLabel("Application Score (0-100)")
+        .setPlaceholder("Example: 87")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setMinLength(1)
+        .setMaxLength(3);
 
-        const announcementInput = new TextInputBuilder()
-          .setCustomId("announcement_text")
-          .setLabel("Announcement Text")
-          .setPlaceholder("Write the public announcement...")
-          .setStyle(TextInputStyle.Paragraph)
-          .setRequired(true)
-          .setMaxLength(1000);
+      const announcementInput = new TextInputBuilder()
+        .setCustomId("announcement_text")
+        .setLabel("Announcement Text")
+        .setPlaceholder("Write the public announcement...")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+        .setMaxLength(1000);
 
-        const applicantMessageInput = new TextInputBuilder()
-          .setCustomId("message_to_applicant")
-          .setLabel("Message to Applicant")
-          .setPlaceholder("Write the private message for the applicant...")
-          .setStyle(TextInputStyle.Paragraph)
-          .setRequired(true)
-          .setMaxLength(1000);
+      const applicantMessageInput = new TextInputBuilder()
+        .setCustomId("message_to_applicant")
+        .setLabel("Message to Applicant")
+        .setPlaceholder("Write the private message for the applicant...")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+        .setMaxLength(1000);
 
-        modal.addComponents(
-          new ActionRowBuilder().addComponents(scoreInput),
-          new ActionRowBuilder().addComponents(announcementInput),
-          new ActionRowBuilder().addComponents(applicantMessageInput),
-        );
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(scoreInput),
+        new ActionRowBuilder().addComponents(announcementInput),
+        new ActionRowBuilder().addComponents(applicantMessageInput),
+      );
 
-        pendingReviews.set(applicantId, {
-          applicationName,
-          reviewerId: interaction.user.id,
+      pendingReviews.set(applicantId, {
+        applicationName,
+        reviewerId: interaction.user.id,
+      });
+
+      return interaction.showModal(modal);
+    }
+
+    /*
+          ========================================
+          ANSWER MODAL SUBMISSION
+          ========================================
+          */
+
+    if (
+      interaction.isModalSubmit() &&
+      interaction.customId.startsWith("application_answer_")
+    ) {
+      const parts = interaction.customId.split("_");
+
+      const userId = parts[2];
+
+      const index = parseInt(parts[3]);
+
+      if (interaction.user.id !== userId) {
+        return interaction.reply({
+          content: "❌ This is not your application.",
+          flags: 64,
         });
+      }
 
-        return interaction.showModal(modal);
+      const state = activeApplications.get(userId);
+
+      if (!state) {
+        return interaction.reply({
+          content:
+            "❌ Your application session has expired. Please start again with `!apply`.",
+          flags: 64,
+        });
+      }
+
+      const application = applications[state.type];
+
+      const fields = getAllFields(application);
+
+      const field = fields[index];
+
+      if (!field) {
+        return interaction.reply({
+          content: "❌ This question could not be found.",
+          flags: 64,
+        });
       }
 
       /*
-            ========================================
-            ANSWER MODAL SUBMISSION
-            ========================================
-            */
+              SAVE ANSWER
+              */
 
-      if (
-        interaction.isModalSubmit() &&
-        interaction.customId.startsWith("application_answer_")
-      ) {
-        const parts = interaction.customId.split("_");
+      const answer = interaction.fields.getTextInputValue("answer");
 
-        const userId = parts[2];
+      state.answers[field.id] = answer;
 
-        const index = parseInt(parts[3]);
+      state.currentIndex = index + 1;
 
-        if (interaction.user.id !== userId) {
-          return interaction.reply({
-            content: "❌ This is not your application.",
-            flags: 64,
-          });
-        }
+      saveApplicationSessions();
 
-        const state = activeApplications.get(userId);
-
-        if (!state) {
-          return interaction.reply({
-            content:
-              "❌ Your application session has expired. Please start again with `!apply`.",
-            flags: 64,
-          });
-        }
-
-        const application = applications[state.type];
-
-        const fields = getAllFields(application);
-
-        const field = fields[index];
-
-        if (!field) {
-          return interaction.reply({
-            content: "❌ This question could not be found.",
-            flags: 64,
-          });
-        }
-
-        /*
-                SAVE ANSWER
-                */
-
-        const answer = interaction.fields.getTextInputValue("answer");
-
-        state.answers[field.id] = answer;
-
-        state.currentIndex = index + 1;
-
-        saveApplicationSessions();
-
-        /*
+      /*
 ========================================
 APPLICATION FINISHED
 ========================================
 */
 
-        if (state.currentIndex >= fields.length) {
-          try {
-            await interaction.reply({
-              content:
-                "⏳ **Submitting your application...**\n\n" +
-                "Please wait a moment.",
-              flags: 64,
-            });
+      if (state.currentIndex >= fields.length) {
+        try {
+          await interaction.reply({
+            content:
+              "⏳ **Submitting your application...**\n\n" +
+              "Please wait a moment.",
+            flags: 64,
+          });
 
-            await submitApplication(client, interaction, state, application);
+          await submitApplication(client, interaction, state, application);
 
-            activeApplications.delete(userId);
-            saveApplicationSessions();
+          activeApplications.delete(userId);
+          saveApplicationSessions();
 
-            return interaction.editReply({
-              content:
-                "✅ **Application submitted successfully!**\n\n" +
-                "Your application has been sent to SLRP Leadership for review.\n\n" +
-                "You will receive a direct message when there is an update regarding your application.",
-            });
-          } catch (error) {
-            console.error("APPLICATION SUBMISSION ERROR:", error);
+          return interaction.editReply({
+            content:
+              "✅ **Application submitted successfully!**\n\n" +
+              "Your application has been sent to SLRP Leadership for review.\n\n" +
+              "You will receive a direct message when there is an update regarding your application.",
+          });
+        } catch (error) {
+          console.error("APPLICATION SUBMISSION ERROR:", error);
 
-            activeApplications.delete(userId);
-            saveApplicationSessions();
+          activeApplications.delete(userId);
+          saveApplicationSessions();
 
-            if (interaction.replied || interaction.deferred) {
-              return interaction
-                .editReply({
-                  content:
-                    "❌ **There was an error submitting your application.**\n\n" +
-                    "Please contact a member of SLRP Leadership and let them know what happened.",
-                })
-                .catch(() => { });
-            }
-
+          if (interaction.replied || interaction.deferred) {
             return interaction
-              .reply({
+              .editReply({
                 content:
                   "❌ **There was an error submitting your application.**\n\n" +
                   "Please contact a member of SLRP Leadership and let them know what happened.",
-                flags: 64,
               })
               .catch(() => { });
           }
-        }
 
-        /*
+          return interaction
+            .reply({
+              content:
+                "❌ **There was an error submitting your application.**\n\n" +
+                "Please contact a member of SLRP Leadership and let them know what happened.",
+              flags: 64,
+            })
+            .catch(() => { });
+        }
+      }
+
+      /*
 ========================================
 SHOW NEXT QUESTION
 ========================================
 */
 
-        return showQuestion(interaction, userId);
-      }
-      /*
+      return showQuestion(interaction, userId);
+    }
+    /*
 ========================================
 REVIEW MODAL SUBMISSION
 ========================================
 */
 
+    if (
+      interaction.isModalSubmit() &&
+      interaction.customId.startsWith("application_review_submit_")
+    ) {
+      const applicantId = interaction.customId.replace(
+        "application_review_submit_",
+        "",
+      );
+
+      const score = interaction.fields
+        .getTextInputValue("review_score")
+        .trim();
+
+      const announcementText = interaction.fields
+        .getTextInputValue("announcement_text")
+        .trim();
+
+      const messageToApplicant = interaction.fields
+        .getTextInputValue("message_to_applicant")
+        .trim();
+
+      const scoreNumber = Number(score);
+
+      /*
+========================================
+VALIDATE SCORE
+========================================
+*/
+
       if (
-        interaction.isModalSubmit() &&
-        interaction.customId.startsWith("application_review_submit_")
+        !Number.isInteger(scoreNumber) ||
+        scoreNumber < 0 ||
+        scoreNumber > 100
       ) {
-        const applicantId = interaction.customId.replace(
-          "application_review_submit_",
-          "",
-        );
+        return interaction.reply({
+          content:
+            "❌ The application score must be a whole number between **0 and 100**.",
+          flags: 64,
+        });
+      }
 
-        const score = interaction.fields
-          .getTextInputValue("review_score")
-          .trim();
+      /*
+========================================
+GET APPLICATION INFORMATION
+========================================
+*/
 
-        const announcementText = interaction.fields
-          .getTextInputValue("announcement_text")
-          .trim();
+      const applicationMessage = interaction.message;
 
-        const messageToApplicant = interaction.fields
-          .getTextInputValue("message_to_applicant")
-          .trim();
+      let applicationName = "Application";
 
-        const scoreNumber = Number(score);
+      const pendingReview = pendingReviews.get(applicantId);
 
-        /*
-  ========================================
-  VALIDATE SCORE
-  ========================================
-  */
+      if (pendingReview?.applicationName) {
+        applicationName = pendingReview.applicationName;
+      }
 
-        if (
-          !Number.isInteger(scoreNumber) ||
-          scoreNumber < 0 ||
-          scoreNumber > 100
-        ) {
-          return interaction.reply({
-            content:
-              "❌ The application score must be a whole number between **0 and 100**.",
-            flags: 64,
-          });
-        }
+      /*
+========================================
+SAVE REVIEW
+========================================
+*/
 
-        /*
-  ========================================
-  GET APPLICATION INFORMATION
-  ========================================
-  */
+      pendingReviews.set(applicantId, {
+        applicationName,
+        reviewerId: interaction.user.id,
+        score: scoreNumber,
+        announcementText,
+        messageToApplicant,
+      });
 
-        const applicationMessage = interaction.message;
+      /*
+========================================
+FIND RESULTS CHANNEL
+========================================
+*/
 
-        let applicationName = "Application";
+      const resultsChannel = await client.channels
+        .fetch(APPLICATION_RESULTS_CHANNEL)
+        .catch(() => null);
 
-        const pendingReview = pendingReviews.get(applicantId);
+      if (!resultsChannel) {
+        return interaction.reply({
+          content: "❌ The application results channel could not be found.",
+          flags: 64,
+        });
+      }
 
-        if (pendingReview?.applicationName) {
-          applicationName = pendingReview.applicationName;
-        }
+      /*
+========================================
+FIND APPLICATION MESSAGE
+========================================
+*/
 
-        /*
-  ========================================
-  SAVE REVIEW
-  ========================================
-  */
+      let targetMessage = null;
 
-        pendingReviews.set(applicantId, {
-          applicationName,
-          reviewerId: interaction.user.id,
-          score: scoreNumber,
-          announcementText,
-          messageToApplicant,
+      try {
+        const messages = await resultsChannel.messages.fetch({
+          limit: 100,
         });
 
-        /*
-  ========================================
-  FIND RESULTS CHANNEL
-  ========================================
-  */
+        targetMessage = messages.find((message) =>
+          message.components?.some((row) =>
+            row.components?.some(
+              (button) =>
+                button.customId === `application_review_${applicantId}` ||
+                button.customId === `application_accept_${applicantId}` ||
+                button.customId === `application_deny_${applicantId}`,
+            ),
+          ),
+        );
+      } catch (error) {
+        console.error("ERROR FINDING APPLICATION MESSAGE:", error);
+      }
 
+      /*
+========================================
+UPDATE RESULTS EMBED
+========================================
+*/
+
+      if (targetMessage) {
+        const originalEmbed = targetMessage.embeds[0];
+
+        if (originalEmbed) {
+          const updatedEmbed = EmbedBuilder.from(originalEmbed)
+            .addFields(
+              {
+                name: "📊 Application Score",
+                value: `**${scoreNumber}/100**`,
+                inline: true,
+              },
+              {
+                name: "👤 Reviewer",
+                value: `${interaction.user}`,
+                inline: true,
+              },
+              {
+                name: "📋 Status",
+                value: "📝 **UNDER REVIEW**",
+                inline: true,
+              },
+              {
+                name: "📢 Announcement Text",
+                value: truncate(announcementText, 1000),
+              },
+              {
+                name: "💬 Message to Applicant",
+                value: truncate(messageToApplicant, 1000),
+              },
+            )
+            .setTimestamp();
+
+          await targetMessage.edit({
+            embeds: [updatedEmbed],
+          });
+        }
+      }
+
+      /*
+========================================
+REVIEW SAVED
+========================================
+*/
+
+      return interaction.reply({
+        content:
+          "📝 **Application review saved successfully.**\n\n" +
+          `**Score:** ${scoreNumber}/100\n` +
+          `**Reviewer:** ${interaction.user}\n\n` +
+          "You can now use **Accept** or **Deny**.",
+        flags: 64,
+      });
+    }
+
+    /*
+========================================
+ACCEPT / DENY
+========================================
+*/
+
+    if (
+      interaction.isButton() &&
+      (interaction.customId.startsWith("application_accept_") ||
+        interaction.customId.startsWith("application_deny_"))
+    ) {
+      await interaction.deferReply({
+        flags: 64,
+      });
+      const isAccepted = interaction.customId.startsWith(
+        "application_accept_",
+      );
+
+      const applicantId = interaction.customId.replace(
+        isAccepted ? "application_accept_" : "application_deny_",
+        "",
+      );
+
+      /*
+========================================
+GET REVIEW
+========================================
+*/
+
+      const review = pendingReviews.get(applicantId);
+
+      if (!review) {
+        return interaction.editReply({
+          content:
+            "❌ This application has not been reviewed yet.\n\n" +
+            "Please click **Review Application** first.",
+        });
+      }
+
+      /*
+========================================
+GET APPLICANT
+========================================
+*/
+
+      const applicant = await client.users
+        .fetch(applicantId)
+        .catch(() => null);
+
+      if (!applicant) {
+        return interaction.editReply({
+          content: "❌ The applicant could not be found.",
+        });
+      }
+
+      /*
+========================================
+SEND ANNOUNCEMENT
+========================================
+*/
+
+      let announcementSent = true;
+
+      try {
+        const announceChannel = await client.channels
+          .fetch(APPLICATION_ANNOUNCE_CHANNEL)
+          .catch(() => null);
+
+        if (!announceChannel) {
+          throw new Error("APPLICATION_ANNOUNCE_CHANNEL could not be found.");
+        }
+
+        const announcementEmbed = new EmbedBuilder()
+          .setColor(isAccepted ? "#57F287" : "#ED4245")
+          .setTitle(
+            isAccepted ? "🎉 Application Accepted" : "❌ Application Denied",
+          )
+          .setDescription(`**${review.applicationName} Application**`)
+          .addFields(
+            {
+              name: "Applicant",
+              value: `${applicant}`,
+              inline: true,
+            },
+            {
+              name: "Score",
+              value: `${review.score}/100`,
+              inline: true,
+            },
+            {
+              name: "Result",
+              value: isAccepted ? "✅ **ACCEPTED**" : "❌ **DENIED**",
+              inline: true,
+            },
+            {
+              name: "Announcement",
+              value: truncate(review.announcementText, 1000),
+            },
+            {
+              name: "Reviewed By",
+              value: `${interaction.user}`,
+            },
+          )
+          .setFooter({
+            text: "State Line Roleplay • Applications",
+          })
+          .setTimestamp();
+
+        await announceChannel.send({
+          embeds: [announcementEmbed],
+        });
+      } catch (error) {
+        announcementSent = false;
+
+        console.error("ANNOUNCEMENT ERROR:", error);
+      }
+
+      /*
+========================================
+SEND APPLICANT DM
+========================================
+*/
+
+      let dmSent = true;
+
+      try {
+        await applicant.send(
+          "📋 **You received a new message regarding your application.**\n\n" +
+          `**${review.applicationName} Application**\n\n` +
+          `**Result:** ${isAccepted ? "✅ ACCEPTED" : "❌ DENIED"}\n` +
+          `**Score:** ${review.score}/100\n\n` +
+          `${review.messageToApplicant}\n\n` +
+          "━━━━━━━━━━━━━━━━━━━━━━\n" +
+          "State Line Roleplay",
+        );
+      } catch (error) {
+        dmSent = false;
+
+        console.error("APPLICANT DM ERROR:", error);
+      }
+
+      /*
+========================================
+UPDATE RESULTS MESSAGE
+========================================
+*/
+
+      let targetMessage = null;
+
+      try {
         const resultsChannel = await client.channels
           .fetch(APPLICATION_RESULTS_CHANNEL)
           .catch(() => null);
 
-        if (!resultsChannel) {
-          return interaction.reply({
-            content: "❌ The application results channel could not be found.",
-            flags: 64,
-          });
-        }
-
-        /*
-  ========================================
-  FIND APPLICATION MESSAGE
-  ========================================
-  */
-
-        let targetMessage = null;
-
-        try {
+        if (resultsChannel) {
           const messages = await resultsChannel.messages.fetch({
             limit: 100,
           });
@@ -2454,450 +2647,217 @@ REVIEW MODAL SUBMISSION
               ),
             ),
           );
-        } catch (error) {
-          console.error("ERROR FINDING APPLICATION MESSAGE:", error);
-        }
 
-        /*
-  ========================================
-  UPDATE RESULTS EMBED
-  ========================================
-  */
+          if (targetMessage) {
+            const originalEmbed = targetMessage.embeds[0];
 
-        if (targetMessage) {
-          const originalEmbed = targetMessage.embeds[0];
+            if (originalEmbed) {
+              const updatedEmbed = EmbedBuilder.from(originalEmbed)
+                .setColor(isAccepted ? "#57F287" : "#ED4245")
+                .addFields(
+                  {
+                    name: "📊 Application Score",
+                    value: `**${review.score}/100**`,
+                    inline: true,
+                  },
+                  {
+                    name: "👤 Reviewer",
+                    value: `${interaction.user}`,
+                    inline: true,
+                  },
+                  {
+                    name: "📋 Final Result",
+                    value: isAccepted ? "✅ **ACCEPTED**" : "❌ **DENIED**",
+                    inline: true,
+                  },
+                  {
+                    name: "📢 Announcement",
+                    value: truncate(review.announcementText, 1000),
+                  },
+                  {
+                    name: "💬 Message to Applicant",
+                    value: truncate(review.messageToApplicant, 1000),
+                  },
+                )
+                .setTimestamp();
 
-          if (originalEmbed) {
-            const updatedEmbed = EmbedBuilder.from(originalEmbed)
-              .addFields(
-                {
-                  name: "📊 Application Score",
-                  value: `**${scoreNumber}/100**`,
-                  inline: true,
-                },
-                {
-                  name: "👤 Reviewer",
-                  value: `${interaction.user}`,
-                  inline: true,
-                },
-                {
-                  name: "📋 Status",
-                  value: "📝 **UNDER REVIEW**",
-                  inline: true,
-                },
-                {
-                  name: "📢 Announcement Text",
-                  value: truncate(announcementText, 1000),
-                },
-                {
-                  name: "💬 Message to Applicant",
-                  value: truncate(messageToApplicant, 1000),
-                },
-              )
-              .setTimestamp();
+              const disabledRow = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                  .setCustomId(`application_review_${applicantId}`)
+                  .setLabel("Reviewed")
+                  .setEmoji("📝")
+                  .setStyle(ButtonStyle.Primary)
+                  .setDisabled(true),
 
-            await targetMessage.edit({
-              embeds: [updatedEmbed],
-            });
+                new ButtonBuilder()
+                  .setCustomId(`application_accept_${applicantId}`)
+                  .setLabel(isAccepted ? "Accepted" : "Accept")
+                  .setEmoji("✅")
+                  .setStyle(ButtonStyle.Success)
+                  .setDisabled(true),
+
+                new ButtonBuilder()
+                  .setCustomId(`application_deny_${applicantId}`)
+                  .setLabel(isAccepted ? "Deny" : "Denied")
+                  .setEmoji("❌")
+                  .setStyle(ButtonStyle.Danger)
+                  .setDisabled(true),
+              );
+
+              await targetMessage.edit({
+                embeds: [updatedEmbed],
+                components: [disabledRow],
+              });
+            }
           }
         }
-
-        /*
-  ========================================
-  REVIEW SAVED
-  ========================================
-  */
-
-        return interaction.reply({
-          content:
-            "📝 **Application review saved successfully.**\n\n" +
-            `**Score:** ${scoreNumber}/100\n` +
-            `**Reviewer:** ${interaction.user}\n\n` +
-            "You can now use **Accept** or **Deny**.",
-          flags: 64,
-        });
+      } catch (error) {
+        console.error("RESULT UPDATE ERROR:", error);
       }
 
       /*
 ========================================
-ACCEPT / DENY
+CLEANUP
 ========================================
 */
 
-      if (
-        interaction.isButton() &&
-        (interaction.customId.startsWith("application_accept_") ||
-          interaction.customId.startsWith("application_deny_"))
-      ) {
-        await interaction.deferReply({
-          flags: 64,
-        });
-        const isAccepted = interaction.customId.startsWith(
-          "application_accept_",
-        );
+      pendingReviews.delete(applicantId);
 
-        const applicantId = interaction.customId.replace(
-          isAccepted ? "application_accept_" : "application_deny_",
-          "",
-        );
+      let resultMessage = isAccepted
+        ? "✅ **Application accepted successfully.**"
+        : "❌ **Application denied successfully.**";
 
-        /*
-  ========================================
-  GET REVIEW
-  ========================================
-  */
+      if (!announcementSent) {
+        resultMessage += "\n⚠️ The announcement could not be sent.";
+      }
 
-        const review = pendingReviews.get(applicantId);
+      if (!dmSent) {
+        resultMessage += "\n⚠️ The applicant could not be DM'd.";
+      }
 
-        if (!review) {
-          return interaction.editReply({
-            content:
-              "❌ This application has not been reviewed yet.\n\n" +
-              "Please click **Review Application** first.",
-          });
-        }
-
-        /*
-  ========================================
-  GET APPLICANT
-  ========================================
-  */
-
-        const applicant = await client.users
-          .fetch(applicantId)
-          .catch(() => null);
-
-        if (!applicant) {
-          return interaction.editReply({
-            content: "❌ The applicant could not be found.",
-          });
-        }
-
-        /*
-  ========================================
-  SEND ANNOUNCEMENT
-  ========================================
-  */
-
-        let announcementSent = true;
-
-        try {
-          const announceChannel = await client.channels
-            .fetch(APPLICATION_ANNOUNCE_CHANNEL)
-            .catch(() => null);
-
-          if (!announceChannel) {
-            throw new Error("APPLICATION_ANNOUNCE_CHANNEL could not be found.");
-          }
-
-          const announcementEmbed = new EmbedBuilder()
-            .setColor(isAccepted ? "#57F287" : "#ED4245")
-            .setTitle(
-              isAccepted ? "🎉 Application Accepted" : "❌ Application Denied",
-            )
-            .setDescription(`**${review.applicationName} Application**`)
-            .addFields(
-              {
-                name: "Applicant",
-                value: `${applicant}`,
-                inline: true,
-              },
-              {
-                name: "Score",
-                value: `${review.score}/100`,
-                inline: true,
-              },
-              {
-                name: "Result",
-                value: isAccepted ? "✅ **ACCEPTED**" : "❌ **DENIED**",
-                inline: true,
-              },
-              {
-                name: "Announcement",
-                value: truncate(review.announcementText, 1000),
-              },
-              {
-                name: "Reviewed By",
-                value: `${interaction.user}`,
-              },
-            )
-            .setFooter({
-              text: "State Line Roleplay • Applications",
-            })
-            .setTimestamp();
-
-          await announceChannel.send({
-            embeds: [announcementEmbed],
-          });
-        } catch (error) {
-          announcementSent = false;
-
-          console.error("ANNOUNCEMENT ERROR:", error);
-        }
-
-        /*
-  ========================================
-  SEND APPLICANT DM
-  ========================================
-  */
-
-        let dmSent = true;
-
-        try {
-          await applicant.send(
-            "📋 **You received a new message regarding your application.**\n\n" +
-            `**${review.applicationName} Application**\n\n` +
-            `**Result:** ${isAccepted ? "✅ ACCEPTED" : "❌ DENIED"}\n` +
-            `**Score:** ${review.score}/100\n\n` +
-            `${review.messageToApplicant}\n\n` +
-            "━━━━━━━━━━━━━━━━━━━━━━\n" +
-            "State Line Roleplay",
-          );
-        } catch (error) {
-          dmSent = false;
-
-          console.error("APPLICANT DM ERROR:", error);
-        }
-
-        /*
-  ========================================
-  UPDATE RESULTS MESSAGE
-  ========================================
-  */
-
-        let targetMessage = null;
-
-        try {
-          const resultsChannel = await client.channels
-            .fetch(APPLICATION_RESULTS_CHANNEL)
-            .catch(() => null);
-
-          if (resultsChannel) {
-            const messages = await resultsChannel.messages.fetch({
-              limit: 100,
-            });
-
-            targetMessage = messages.find((message) =>
-              message.components?.some((row) =>
-                row.components?.some(
-                  (button) =>
-                    button.customId === `application_review_${applicantId}` ||
-                    button.customId === `application_accept_${applicantId}` ||
-                    button.customId === `application_deny_${applicantId}`,
-                ),
-              ),
-            );
-
-            if (targetMessage) {
-              const originalEmbed = targetMessage.embeds[0];
-
-              if (originalEmbed) {
-                const updatedEmbed = EmbedBuilder.from(originalEmbed)
-                  .setColor(isAccepted ? "#57F287" : "#ED4245")
-                  .addFields(
-                    {
-                      name: "📊 Application Score",
-                      value: `**${review.score}/100**`,
-                      inline: true,
-                    },
-                    {
-                      name: "👤 Reviewer",
-                      value: `${interaction.user}`,
-                      inline: true,
-                    },
-                    {
-                      name: "📋 Final Result",
-                      value: isAccepted ? "✅ **ACCEPTED**" : "❌ **DENIED**",
-                      inline: true,
-                    },
-                    {
-                      name: "📢 Announcement",
-                      value: truncate(review.announcementText, 1000),
-                    },
-                    {
-                      name: "💬 Message to Applicant",
-                      value: truncate(review.messageToApplicant, 1000),
-                    },
-                  )
-                  .setTimestamp();
-
-                const disabledRow = new ActionRowBuilder().addComponents(
-                  new ButtonBuilder()
-                    .setCustomId(`application_review_${applicantId}`)
-                    .setLabel("Reviewed")
-                    .setEmoji("📝")
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(true),
-
-                  new ButtonBuilder()
-                    .setCustomId(`application_accept_${applicantId}`)
-                    .setLabel(isAccepted ? "Accepted" : "Accept")
-                    .setEmoji("✅")
-                    .setStyle(ButtonStyle.Success)
-                    .setDisabled(true),
-
-                  new ButtonBuilder()
-                    .setCustomId(`application_deny_${applicantId}`)
-                    .setLabel(isAccepted ? "Deny" : "Denied")
-                    .setEmoji("❌")
-                    .setStyle(ButtonStyle.Danger)
-                    .setDisabled(true),
-                );
-
-                await targetMessage.edit({
-                  embeds: [updatedEmbed],
-                  components: [disabledRow],
-                });
-              }
-            }
-          }
-        } catch (error) {
-          console.error("RESULT UPDATE ERROR:", error);
-        }
-
-        /*
-  ========================================
-  CLEANUP
-  ========================================
-  */
-
-        pendingReviews.delete(applicantId);
-
-        let resultMessage = isAccepted
-          ? "✅ **Application accepted successfully.**"
-          : "❌ **Application denied successfully.**";
-
-        if (!announcementSent) {
-          resultMessage += "\n⚠️ The announcement could not be sent.";
-        }
-
-        if (!dmSent) {
-          resultMessage += "\n⚠️ The applicant could not be DM'd.";
-        }
-
-        if (interaction.deferred || interaction.replied) {
-          return interaction.editReply({
-            content: resultMessage,
-          });
-        }
-
-        return interaction.reply({
+      if (interaction.deferred || interaction.replied) {
+        return interaction.editReply({
           content: resultMessage,
+        });
+      }
+
+      return interaction.reply({
+        content: resultMessage,
+        flags: 64,
+      });
+    }
+
+    /*
+  ========================================
+  AUTOMOD REVIEW
+  ========================================
+  */
+
+    if (
+      interaction.isButton() &&
+      (interaction.customId.startsWith("automod_ban_") ||
+        interaction.customId.startsWith("automod_release_"))
+    ) {
+      const isBan = interaction.customId.startsWith("automod_ban_");
+
+      const prefix = isBan ? "automod_ban_" : "automod_release_";
+
+      const data = interaction.customId.replace(prefix, "");
+
+      const parts = data.split("_");
+
+      const applicantId = parts[0];
+
+      const member = await interaction.guild.members
+        .fetch(applicantId)
+        .catch(() => null);
+
+      if (!member) {
+        return interaction.reply({
+          content: "❌ User could not be found.",
           flags: 64,
         });
       }
 
       /*
-    ========================================
-    AUTOMOD REVIEW
-    ========================================
-    */
+      ========================================
+      BAN
+      ========================================
+      */
 
-      if (
-        interaction.isButton() &&
-        (interaction.customId.startsWith("automod_ban_") ||
-          interaction.customId.startsWith("automod_release_"))
-      ) {
-        const isBan = interaction.customId.startsWith("automod_ban_");
-
-        const prefix = isBan ? "automod_ban_" : "automod_release_";
-
-        const data = interaction.customId.replace(prefix, "");
-
-        const parts = data.split("_");
-
-        const applicantId = parts[0];
-
-        const member = await interaction.guild.members
-          .fetch(applicantId)
-          .catch(() => null);
-
-        if (!member) {
+      if (isBan) {
+        if (!member.bannable) {
           return interaction.reply({
-            content: "❌ User could not be found.",
+            content:
+              "❌ I cannot ban this user. Check my role position and permissions.",
             flags: 64,
           });
         }
 
-        /*
-        ========================================
-        BAN
-        ========================================
-        */
-
-        if (isBan) {
-          if (!member.bannable) {
-            return interaction.reply({
-              content:
-                "❌ I cannot ban this user. Check my role position and permissions.",
-              flags: 64,
-            });
-          }
-
-          try {
-            await member.ban({
-              reason: `AutoMod review approved by ${interaction.user.tag}`,
-            });
-          } catch (error) {
-            console.error("AUTOMOD BAN ERROR:", error);
-
-            return interaction.reply({
-              content: "❌ Failed to ban the user.",
-              flags: 64,
-            });
-          }
-
-          await interaction.update({
-            content: `🔨 **User banned**\nReviewed by ${interaction.user}`,
-            embeds: interaction.message.embeds,
-            components: [],
-          });
-
-          return;
-        }
-
-        /*
-        ========================================
-        RELEASE TIMEOUT
-        ========================================
-        */
-
         try {
-          await member.timeout(
-            null,
-            `AutoMod review dismissed by ${interaction.user.tag}`,
-          );
+          await member.ban({
+            reason: `AutoMod review approved by ${interaction.user.tag}`,
+          });
         } catch (error) {
-          console.error("AUTOMOD RELEASE ERROR:", error);
+          console.error("AUTOMOD BAN ERROR:", error);
 
           return interaction.reply({
-            content: "❌ Failed to remove the timeout.",
+            content: "❌ Failed to ban the user.",
             flags: 64,
           });
         }
 
         await interaction.update({
-          content: `🔓 **Timeout released**\nReviewed by ${interaction.user}`,
+          content: `🔨 **User banned**\nReviewed by ${interaction.user}`,
           embeds: interaction.message.embeds,
           components: [],
         });
 
         return;
       }
-    } catch (error) {
-      console.error("INTERACTION ERROR:", error);
 
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction
-          .reply({
-            content:
-              "❌ An unexpected error occurred while processing this interaction.",
-            flags: 64,
-          })
-          .catch(() => { });
+      /*
+      ========================================
+      RELEASE TIMEOUT
+      ========================================
+      */
+
+      try {
+        await member.timeout(
+          null,
+          `AutoMod review dismissed by ${interaction.user.tag}`,
+        );
+      } catch (error) {
+        console.error("AUTOMOD RELEASE ERROR:", error);
+
+        return interaction.reply({
+          content: "❌ Failed to remove the timeout.",
+          flags: 64,
+        });
       }
+
+      await interaction.update({
+        content: `🔓 **Timeout released**\nReviewed by ${interaction.user}`,
+        embeds: interaction.message.embeds,
+        components: [],
+      });
+
+      return;
     }
-  });
+  } catch (error) {
+    console.error("INTERACTION ERROR:", error);
+
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction
+        .reply({
+          content:
+            "❌ An unexpected error occurred while processing this interaction.",
+          flags: 64,
+        })
+        .catch(() => { });
+    }
+  }
+});
 };
 
 module.exports.activeApplications = activeApplications;
@@ -3237,4 +3197,4 @@ function truncate(text, maxLength = 1024) {
   }
 
   return text.substring(0, maxLength - 3) + "...";
-}
+};
