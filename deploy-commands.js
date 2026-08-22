@@ -215,7 +215,9 @@ const commands = [
     new SlashCommandBuilder()
         .setName("apply-continue")
         .setDescription("Continue your saved application."),
-
+    new SlashCommandBuilder()
+    .setName("sos")
+    .setDescription("Lock all server channels."),
 
 ].map(command => command.toJSON());
 

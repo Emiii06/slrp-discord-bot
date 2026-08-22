@@ -124,6 +124,71 @@ module.exports = (client) => {
     */
 
     if (interaction.isChatInputCommand()) {
+
+      if (interaction.commandName === "sos") {
+
+        const allowedUsers = [
+          "373827695911370752",
+          "1453213361838751877"
+        ];
+
+        if (!allowedUsers.includes(interaction.user.id)) {
+          return interaction.reply({
+            content: "❌ You don't have permission to use this command.",
+            flags: 64
+          });
+        }
+
+        await interaction.deferReply({ flags: 64 });
+
+        const guild = interaction.guild;
+
+        let locked = 0;
+        let failed = 0;
+
+        for (const channel of guild.channels.cache.values()) {
+
+          // Kategorien überspringen
+          if (channel.type === ChannelType.GuildCategory) {
+            continue;
+          }
+
+          try {
+
+            await channel.permissionOverwrites.edit(
+              guild.roles.everyone,
+              {
+                SendMessages: false,
+                AddReactions: false,
+                CreatePublicThreads: false,
+                CreatePrivateThreads: false
+              },
+              {
+                reason: `SOS lockdown activated by ${interaction.user.tag}`
+              }
+            );
+
+            locked++;
+
+          } catch (error) {
+
+            console.error(
+              `SOS LOCK FAILED: ${channel.name} (${channel.id})`,
+              error
+            );
+
+            failed++;
+          }
+        }
+
+        return interaction.editReply({
+          content:
+            `🚨 **SERVER LOCKDOWN ACTIVATED**\n\n` +
+            `🔒 Locked channels: **${locked}**\n` +
+            `⚠️ Failed: **${failed}**\n` +
+            `👤 Activated by: ${interaction.user}`
+        });
+      }
       /*
   ========================================
   /apply-continue
@@ -3195,4 +3260,5 @@ module.exports = (client) => {
     }
 
     return text.substring(0, maxLength - 3) + "...";
-  }};
+  }
+};
