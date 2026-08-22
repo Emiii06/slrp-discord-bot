@@ -130,8 +130,28 @@ const commands = [
                     {
                         name: "👥 Currently On Duty",
                         value: "loggedin"
+                    },
+                    {
+                        name: "📅 My Weekly Time",
+                        value: "week"
+                    },
+                    {
+                        name: "⏳ My Total Time",
+                        value: "time"
+                    },
+                    {
+                        name: "📊 My Statistics",
+                        value: "stats"
+
                     }
                 )
+
+        )
+        .addUserOption(option =>
+            option
+                .setName("user")
+                .setDescription("View another user's statistics.")
+                .setRequired(false)
         ),
 
 

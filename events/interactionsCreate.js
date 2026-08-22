@@ -354,6 +354,178 @@ SLASH COMMANDS
             embeds: [embed]
           });
         }
+
+        /*
+========================================
+WEEK
+========================================
+*/
+
+        if (action === "week") {
+
+          const user = getUserData(interaction.user.id);
+
+          const {
+            hours,
+            minutes,
+            seconds
+          } = formatDuration(user.weekTime);
+
+          return interaction.reply({
+            content:
+              `📅 This week you've been on duty for **${hours}h ${minutes}m ${seconds}s**.`,
+            flags: 64
+          });
+        }
+
+
+        /*
+        ========================================
+        TOTAL TIME
+        ========================================
+        */
+
+        if (action === "time") {
+
+          const user = getUserData(interaction.user.id);
+
+          const {
+            hours,
+            minutes,
+            seconds
+          } = formatDuration(user.totalTime);
+
+          return interaction.reply({
+            content:
+              `⏳ Total duty time: **${hours}h ${minutes}m ${seconds}s**.`,
+            flags: 64
+          });
+        }
+
+
+        /*
+        ========================================
+        STATS
+        ========================================
+        */
+
+        if (action === "stats") {
+
+          const member = interaction.options.getMember("user")
+            || interaction.member;
+
+          const user = getUserData(member.id);
+
+          const weeklyLeaderboard = [...users.entries()]
+            .sort((a, b) => b[1].weekTime - a[1].weekTime);
+
+          const weeklyRank =
+            weeklyLeaderboard.findIndex(
+              ([id]) => id === member.id
+            ) + 1;
+
+          const totalLeaderboard = [...users.entries()]
+            .sort((a, b) => b[1].totalTime - a[1].totalTime);
+
+          const totalRank =
+            totalLeaderboard.findIndex(
+              ([id]) => id === member.id
+            ) + 1;
+
+          const weekSeconds =
+            Math.floor(user.weekTime / 1000);
+
+          const totalSeconds =
+            Math.floor(user.totalTime / 1000);
+
+          const weekHours =
+            Math.floor(weekSeconds / 3600);
+
+          const weekMinutes =
+            Math.floor(
+              (weekSeconds % 3600) / 60
+            );
+
+          const totalHours =
+            Math.floor(totalSeconds / 3600);
+
+          const totalMinutes =
+            Math.floor(
+              (totalSeconds % 3600) / 60
+            );
+
+          let session = "Offline";
+
+          if (user.loginTime !== null) {
+
+            const diff =
+              Date.now() - user.loginTime;
+
+            const seconds =
+              Math.floor(diff / 1000);
+
+            const hours =
+              Math.floor(seconds / 3600);
+
+            const minutes =
+              Math.floor(
+                (seconds % 3600) / 60
+              );
+
+            session = `${hours}h ${minutes}m`;
+          }
+
+          const embed = new EmbedBuilder()
+            .setColor("#2B2D31")
+            .setTitle("📊 Staff Statistics")
+            .setDescription(
+              `👤 **${member.user.tag}**`
+            )
+            .setThumbnail(
+              member.user.displayAvatarURL()
+            )
+            .addFields(
+              {
+                name: "⏱ Current Session",
+                value: session,
+                inline: true
+              },
+              {
+                name: "📅 This Week",
+                value: `${weekHours}h ${weekMinutes}m`,
+                inline: true
+              },
+              {
+                name: "🏆 All Time",
+                value: `${totalHours}h ${totalMinutes}m`,
+                inline: true
+              },
+              {
+                name: "🟢 Status",
+                value:
+                  user.loginTime
+                    ? "On Duty"
+                    : "Off Duty",
+                inline: true
+              },
+              {
+                name: "🏅 Weekly Rank",
+                value: `#${weeklyRank}`,
+                inline: true
+              },
+              {
+                name: "👑 All Time Rank",
+                value: `#${totalRank}`,
+                inline: true
+              }
+            )
+            .setTimestamp();
+
+          return interaction.reply({
+            embeds: [embed],
+            flags: 64
+          });
+        }
       }
       /*
 ========================================
