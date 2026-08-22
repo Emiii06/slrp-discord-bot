@@ -74,11 +74,42 @@ const commands = [
         ),
 
     /*
-    SLASH COMMANDS
+    PATCHNOTES
     */
     new SlashCommandBuilder()
         .setName("patchnote")
         .setDescription("Open the patchnote creator."),
+
+    /*
+    ANNOUNCEMENTS
+    */
+    new SlashCommandBuilder()
+        .setName("session")
+        .setDescription("Manage the current roleplay session.")
+        .addStringOption(option =>
+            option
+                .setName("action")
+                .setDescription("Session action to perform.")
+                .setRequired(true)
+                .addChoices(
+                    {
+                        name: "🚨 Session Startup",
+                        value: "startup"
+                    },
+                    {
+                        name: "🔴 Session End",
+                        value: "end"
+                    },
+                    {
+                        name: "🚔 Public Safety On Duty",
+                        value: "ps-on"
+                    },
+                    {
+                        name: "🚔 Public Safety Off Duty",
+                        value: "ps-off"
+                    }
+                )
+        ),
 
 
 ].map(command => command.toJSON());
