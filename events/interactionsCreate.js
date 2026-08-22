@@ -23,7 +23,8 @@ const {
   TICKET_TRANSCRIPT_CHANNEL,
   MOD_LOG_CHANNEL,
   SERVER_LOGS,
-  SESSION_CHANNEL
+  SESSION_CHANNEL,
+  HOST_ROLE
 } = require("../config");
 
 const activeApplications = new Map();
