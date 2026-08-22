@@ -143,6 +143,22 @@ const commands = [
                         name: "📊 My Statistics",
                         value: "stats"
 
+                    },
+                    {
+                        name: "👤 Login User",
+                        value: "login-user"
+                    },
+                    {
+                        name: "👤 Logout User",
+                        value: "logout-user"
+                    },
+                    {
+                        name: "➕ Add Duty Time",
+                        value: "add-time"
+                    },
+                    {
+                        name: "➖ Remove Duty Time",
+                        value: "remove-time"
                     }
                 )
 
@@ -150,9 +166,16 @@ const commands = [
         .addUserOption(option =>
             option
                 .setName("user")
-                .setDescription("View another user's statistics.")
+                .setDescription("Select a user.")
+                .setRequired(false)
+        )
+        .addStringOption(option =>
+            option
+                .setName("time")
+                .setDescription("Duration, e.g. 2h30m or 45m.")
                 .setRequired(false)
         ),
+
 
 
 ].map(command => command.toJSON());

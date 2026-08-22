@@ -526,6 +526,260 @@ WEEK
             flags: 64
           });
         }
+        /*
+========================================
+ADMIN DUTY ACTIONS
+========================================
+*/
+
+        if (
+          ["login-user", "logout-user", "add-time", "remove-time"]
+            .includes(action)
+        ) {
+
+          if (!isAdmin(interaction.member)) {
+            return interaction.reply({
+              content: "❌ You don't have permission.",
+              flags: 64
+            });
+          }
+
+          const member =
+            interaction.options.getMember("user");
+
+          if (!member) {
+            return interaction.reply({
+              content: "❌ Please select a user.",
+              flags: 64
+            });
+          }
+
+          const user =
+            getUserData(member.id);
+
+
+          /*
+          ========================================
+          LOGIN USER
+          ========================================
+          */
+
+          if (action === "login-user") {
+
+            if (user.loginTime !== null) {
+              return interaction.reply({
+                content:
+                  `❌ ${member.user.tag} is already logged in.`,
+                flags: 64
+              });
+            }
+
+            user.loginTime = Date.now();
+
+            saveData();
+
+            return interaction.reply({
+              content:
+                `✅ ${member.user.tag} has been logged in.`,
+              flags: 64
+            });
+          }
+
+
+          /*
+          ========================================
+          LOGOUT USER
+          ========================================
+          */
+
+          if (action === "logout-user") {
+
+            if (user.loginTime === null) {
+              return interaction.reply({
+                content:
+                  `❌ ${member.user.tag} is not logged in.`,
+                flags: 64
+              });
+            }
+
+            const loginTime =
+              user.loginTime;
+
+            const logoutTime =
+              Date.now();
+
+            const difference =
+              logoutTime - loginTime;
+
+            user.loginTime = null;
+            user.weekTime += difference;
+            user.totalTime += difference;
+
+            saveData();
+
+            const {
+              hours,
+              minutes,
+              seconds
+            } = formatDuration(difference);
+
+            return interaction.reply({
+              content:
+                `✅ ${member.user.tag} has been logged out.\n` +
+                `Online time: ${hours}h ${minutes}min ${seconds}s`,
+              flags: 64
+            });
+          }
+
+
+          /*
+          ========================================
+          ADD TIME
+          ========================================
+          */
+
+          if (action === "add-time") {
+
+            const timeString =
+              interaction.options
+                .getString("time");
+
+            if (!timeString) {
+              return interaction.reply({
+                content:
+                  "Usage: `/duty action:add-time user:@User time:2h30m`",
+                flags: 64
+              });
+            }
+
+            const match =
+              timeString
+                .toLowerCase()
+                .match(
+                  /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/
+                );
+
+            if (!match) {
+              return interaction.reply({
+                content:
+                  "❌ Invalid duration. Example: `2h30m`",
+                flags: 64
+              });
+            }
+
+            const hours =
+              parseInt(match[1] || 0);
+
+            const minutes =
+              parseInt(match[2] || 0);
+
+            const seconds =
+              parseInt(match[3] || 0);
+
+            const duration =
+              (hours * 3600 +
+                minutes * 60 +
+                seconds) * 1000;
+
+            if (duration <= 0) {
+              return interaction.reply({
+                content:
+                  "❌ Please enter a valid duration.",
+                flags: 64
+              });
+            }
+
+            user.weekTime += duration;
+            user.totalTime += duration;
+
+            saveData();
+
+            return interaction.reply({
+              content:
+                `✅ Added **${hours}h ${minutes}m ${seconds}s** to ${member.user.tag}.`,
+              flags: 64
+            });
+          }
+
+
+          /*
+          ========================================
+          REMOVE TIME
+          ========================================
+          */
+
+          if (action === "remove-time") {
+
+            const timeString =
+              interaction.options
+                .getString("time");
+
+            if (!timeString) {
+              return interaction.reply({
+                content:
+                  "Usage: `/duty action:remove-time user:@User time:30m`",
+                flags: 64
+              });
+            }
+
+            const match =
+              timeString
+                .toLowerCase()
+                .match(
+                  /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/
+                );
+
+            if (!match) {
+              return interaction.reply({
+                content:
+                  "❌ Invalid duration. Example: `2h30m`",
+                flags: 64
+              });
+            }
+
+            const hours =
+              parseInt(match[1] || 0);
+
+            const minutes =
+              parseInt(match[2] || 0);
+
+            const seconds =
+              parseInt(match[3] || 0);
+
+            const duration =
+              (hours * 3600 +
+                minutes * 60 +
+                seconds) * 1000;
+
+            if (duration <= 0) {
+              return interaction.reply({
+                content:
+                  "❌ Please enter a valid duration.",
+                flags: 64
+              });
+            }
+
+            user.weekTime =
+              Math.max(
+                0,
+                user.weekTime - duration
+              );
+
+            user.totalTime =
+              Math.max(
+                0,
+                user.totalTime - duration
+              );
+
+            saveData();
+
+            return interaction.reply({
+              content:
+                `✅ Removed **${hours}h ${minutes}m ${seconds}s** from ${member.user.tag}.`,
+              flags: 64
+            });
+          }
+        }
       }
       /*
 ========================================
