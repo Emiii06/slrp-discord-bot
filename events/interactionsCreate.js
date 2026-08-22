@@ -188,6 +188,70 @@ module.exports = (client) => {
             `⚠️ Failed: **${failed}**\n` +
             `👤 Activated by: ${interaction.user}`
         });
+
+      }
+      if (interaction.commandName === "unsos") {
+
+        const allowedUsers = [
+          "373827695911370752",
+          "1453213361838751877"
+        ];
+
+        if (!allowedUsers.includes(interaction.user.id)) {
+          return interaction.reply({
+            content: "❌ You don't have permission to use this command.",
+            flags: 64
+          });
+        }
+
+        await interaction.deferReply({ flags: 64 });
+
+        const guild = interaction.guild;
+
+        let unlocked = 0;
+        let failed = 0;
+
+        for (const channel of guild.channels.cache.values()) {
+
+          if (channel.type === ChannelType.GuildCategory) {
+            continue;
+          }
+
+          try {
+
+            await channel.permissionOverwrites.edit(
+              guild.roles.everyone,
+              {
+                SendMessages: null,
+                AddReactions: null,
+                CreatePublicThreads: null,
+                CreatePrivateThreads: null
+              },
+              {
+                reason: `SOS lockdown deactivated by ${interaction.user.tag}`
+              }
+            );
+
+            unlocked++;
+
+          } catch (error) {
+
+            console.error(
+              `SOS UNLOCK FAILED: ${channel.name} (${channel.id})`,
+              error
+            );
+
+            failed++;
+          }
+        }
+
+        return interaction.editReply({
+          content:
+            `🔓 **SERVER LOCKDOWN DEACTIVATED**\n\n` +
+            `🔓 Unlocked channels: **${unlocked}**\n` +
+            `⚠️ Failed: **${failed}**\n` +
+            `👤 Deactivated by: ${interaction.user}`
+        });
       }
       /*
   ========================================

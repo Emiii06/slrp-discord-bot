@@ -218,6 +218,9 @@ const commands = [
     new SlashCommandBuilder()
     .setName("sos")
     .setDescription("Lock all server channels."),
+    new SlashCommandBuilder()
+    .setName("unsos")
+    .setDescription("Unlock all server channels."),
 
 ].map(command => command.toJSON());
 
