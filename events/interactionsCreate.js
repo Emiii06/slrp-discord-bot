@@ -118,6 +118,35 @@ SLASH COMMANDS
 
     if (interaction.isChatInputCommand()) {
 
+
+      if (interaction.commandName === "patchnote") {
+
+        if (
+          !interaction.member.permissions.has(
+            PermissionFlagsBits.Administrator
+          )
+        ) {
+          return interaction.reply({
+            content: "❌ You don't have permission to create patchnotes.",
+            flags: 64
+          });
+        }
+
+        const button = new ButtonBuilder()
+          .setCustomId("patchnote_open")
+          .setLabel("Create Patchnote")
+          .setEmoji("📝")
+          .setStyle(ButtonStyle.Primary);
+
+        const row = new ActionRowBuilder()
+          .addComponents(button);
+
+        return interaction.reply({
+          content:
+            "📝 **Patchnote Creator**\nClick the button below to create a patchnote.",
+          components: [row]
+        });
+      }
       if (interaction.commandName === "clear") {
 
         if (

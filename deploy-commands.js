@@ -71,7 +71,15 @@ const commands = [
                 .setName("reason")
                 .setDescription("Reason for the action.")
                 .setRequired(true)
-        )
+        ),
+
+    /*
+    SLASH COMMANDS
+    */
+    new SlashCommandBuilder()
+        .setName("patchnote")
+        .setDescription("Open the patchnote creator."),
+
 
 ].map(command => command.toJSON());
 
