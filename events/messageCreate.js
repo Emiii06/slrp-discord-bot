@@ -1,7 +1,6 @@
 const { ALLOWED_CHANNELS } = require("../config");
 
 const application = require("../commands/application");
-const birthdays = require("../commands/birthdays");
 const leaderboardFactory = require("../commands/leaderboard");
 const announcements = require("../commands/announcements");
 const automod = require("../commands/automod");
@@ -76,7 +75,6 @@ module.exports = (client) => {
 
     await leaderboard(message, args, command);
 
-    await birthdays(client, message, args, command);
 
     await announcements(client, message, args, command);
   });
