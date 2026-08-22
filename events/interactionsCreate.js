@@ -70,6 +70,46 @@ module.exports = (client) => {
   console.log("INTERACTION CREATE HANDLER REGISTERED");
 
   client.on("interactionCreate", async (interaction) => {
+
+    module.exports = (client) => {
+      console.log("INTERACTION CREATE HANDLER REGISTERED");
+
+      client.on("interactionCreate", async (interaction) => {
+
+        try {
+
+          /*
+          ========================================
+          SLASH COMMANDS
+          ========================================
+          */
+
+          if (interaction.isChatInputCommand()) {
+
+            // /clear
+            // /logs
+
+          }
+
+          /*
+          ========================================
+          PATCHNOTE CREATE
+          ========================================
+          */
+
+          // ...
+
+        } catch (error) {
+
+          console.error(
+            "INTERACTION ERROR:",
+            error
+          );
+
+        }
+
+      });
+    };
     /*
 ========================================
 SLASH COMMANDS
