@@ -175,7 +175,43 @@ const commands = [
                 .setDescription("Duration, e.g. 2h30m or 45m.")
                 .setRequired(false)
         ),
-
+    new SlashCommandBuilder()
+        .setName("birthday")
+        .setDescription("Manage birthdays.")
+        .addStringOption(option =>
+            option
+                .setName("action")
+                .setDescription("Birthday action.")
+                .setRequired(true)
+                .addChoices(
+                    {
+                        name: "🎂 My Birthday",
+                        value: "me"
+                    },
+                    {
+                        name: "📅 Set Birthday",
+                        value: "set"
+                    },
+                    {
+                        name: "🗑️ Remove Birthday",
+                        value: "remove"
+                    },
+                    {
+                        name: "🎉 Upcoming Birthdays",
+                        value: "list"
+                    },
+                    {
+                        name: "🧪 Birthday Test",
+                        value: "test"
+                    }
+                )
+        )
+        .addStringOption(option =>
+            option
+                .setName("date")
+                .setDescription("Your birthday, e.g. 1 October 2006.")
+                .setRequired(false)
+        ),
 
 
 ].map(command => command.toJSON());
