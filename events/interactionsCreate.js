@@ -116,7 +116,6 @@ module.exports = (client) => {
   console.log("INTERACTION CREATE HANDLER REGISTERED");
 
   client.on("interactionCreate", async (interaction) => {
-    module.exports = (client) => {
     /*
 ========================================
 /apply-continue
@@ -2857,7 +2856,6 @@ CLEANUP
         .catch(() => { });
     }
   }
-});
 };
 
 module.exports.activeApplications = activeApplications;
