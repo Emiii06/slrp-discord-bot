@@ -1,7 +1,6 @@
 const { ALLOWED_CHANNELS } = require("../config");
 
 const application = require("../commands/application");
-const moderation = require("../commands/moderation");
 const duty = require("../commands/duty");
 const birthdays = require("../commands/birthdays");
 const leaderboardFactory = require("../commands/leaderboard");
@@ -75,7 +74,6 @@ module.exports = (client) => {
       return;
     }
 
-    await moderation(client, message, args, command);
 
     await duty(client, message, args, command);
 

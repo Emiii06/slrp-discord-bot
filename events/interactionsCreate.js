@@ -21,6 +21,8 @@ const {
   TICKET_SYSTEMS,
   PATCHNOTES_CHANNEL,
   TICKET_TRANSCRIPT_CHANNEL,
+  MOD_LOG_CHANNEL,
+  SERVER_LOGS
 } = require("../config");
 
 const activeApplications = new Map();
@@ -68,13 +70,151 @@ module.exports = (client) => {
   console.log("INTERACTION CREATE HANDLER REGISTERED");
 
   client.on("interactionCreate", async (interaction) => {
+    /*
+========================================
+SLASH COMMANDS
+========================================
+*/
+
+    if (interaction.isChatInputCommand()) {
+
+      if (interaction.commandName === "clear") {
+
+        if (
+          !interaction.member.permissions.has(
+            PermissionFlagsBits.ManageMessages
+          )
+        ) {
+          return interaction.reply({
+            content: "❌ You don't have permission to use this command.",
+            flags: 64
+          });
+        }
+
+        const amount = interaction.options.getInteger("amount");
+
+        try {
+
+          const messages = await interaction.channel.bulkDelete(
+            amount,
+            true
+          );
+
+          await interaction.reply({
+            content: `🗑️ Deleted **${messages.size}** message${messages.size === 1 ? "" : "s"}.`,
+            flags: 64
+          });
+
+        } catch (error) {
+
+          console.error("CLEAR COMMAND ERROR:", error);
+
+          if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({
+              content: "❌ I couldn't delete the messages.",
+              flags: 64
+            });
+          }
+        }
+
+        return;
+      }
+    }
+
     try {
 
       console.log(
-    "INTERACTION:",
-    interaction.type,
-    interaction.isButton() ? interaction.customId : "not a button"
-);
+        "INTERACTION:",
+        interaction.type,
+        interaction.isButton() ? interaction.customId : "not a button"
+      );
+
+      /*
+========================================
+/logs
+========================================
+*/
+
+      if (
+        interaction.isChatInputCommand() &&
+        interaction.commandName === "logs"
+      ) {
+
+        const type = interaction.options.getString("art");
+        const name = interaction.options.getString("name");
+        const reason = interaction.options.getString("reason");
+
+        const actionData = {
+          warn: {
+            title: "⚠️ Ingame Player Warned",
+            color: "#FEE75C",
+            action: "Warned By"
+          },
+
+          kick: {
+            title: "👢 Ingame Player Kicked",
+            color: "#E67E22",
+            action: "Kicked By"
+          },
+
+          ban: {
+            title: "🔨 Ingame Player Banned",
+            color: "#ED4245",
+            action: "Banned By"
+          }
+        };
+
+        const action = actionData[type];
+
+        if (!action) {
+          return interaction.reply({
+            content: "❌ Invalid log type.",
+            flags: 64
+          });
+        }
+
+        const embed = new EmbedBuilder()
+          .setColor(action.color)
+          .setTitle(action.title)
+          .addFields(
+            {
+              name: "User",
+              value: `\`${name}\``
+            },
+            {
+              name: "Reason",
+              value: reason
+            },
+            {
+              name: `👤 ${action.action}`,
+              value: `${interaction.user} (\`${interaction.user.id}\`)`
+            }
+          )
+          .setFooter({
+            text: "State Line Roleplay • Moderation"
+          })
+          .setTimestamp();
+
+        const logChannel = interaction.guild.channels.cache.get(
+          MOD_LOG_CHANNEL
+        );
+
+        if (!logChannel) {
+          return interaction.reply({
+            content: "❌ The server log channel could not be found.",
+            flags: 64
+          });
+        }
+
+        await logChannel.send({
+          embeds: [embed]
+        });
+
+        return interaction.reply({
+          content: `✅ ${type.toUpperCase()} log created for \`${name}\`.`,
+          flags: 64
+        });
+      }
       /*
 ========================================
 OPEN PATCHNOTE MODAL
@@ -318,239 +458,239 @@ TICKET OPEN
           content: `✅ Your ticket has been created: ${ticketChannel}`,
         });
       }
-        /*
+      /*
 ========================================
 CLOSE TICKET
 ========================================
 */
 
-if (
-    interaction.isButton() &&
-    interaction.customId.startsWith("ticket_close_")
-) {
-    console.log(
-        "TICKET CLOSE CLICKED:",
-        interaction.customId,
-        interaction.user.tag
-    );
+      if (
+        interaction.isButton() &&
+        interaction.customId.startsWith("ticket_close_")
+      ) {
+        console.log(
+          "TICKET CLOSE CLICKED:",
+          interaction.customId,
+          interaction.user.tag
+        );
 
-    /*
-    ========================================
-    ACKNOWLEDGE INTERACTION IMMEDIATELY
-    ========================================
-    */
+        /*
+        ========================================
+        ACKNOWLEDGE INTERACTION IMMEDIATELY
+        ========================================
+        */
 
-    try {
-        await interaction.deferReply({
+        try {
+          await interaction.deferReply({
             flags: 64,
-        });
-    } catch (error) {
-        console.error(
+          });
+        } catch (error) {
+          console.error(
             "FAILED TO DEFER TICKET CLOSE:",
             error
-        );
+          );
 
-        return;
-    }
+          return;
+        }
 
-    try {
-        const type = interaction.customId.replace(
+        try {
+          const type = interaction.customId.replace(
             "ticket_close_",
             ""
-        );
+          );
 
-        console.log("TICKET CLOSE TYPE:", type);
+          console.log("TICKET CLOSE TYPE:", type);
 
-        const system = TICKET_SYSTEMS[type];
+          const system = TICKET_SYSTEMS[type];
 
-        if (!system) {
+          if (!system) {
             return interaction.editReply({
-                content:
-                    "❌ This ticket system is unavailable.",
+              content:
+                "❌ This ticket system is unavailable.",
             });
-        }
+          }
 
-        /*
-        ========================================
-        PERMISSION CHECK
-        ========================================
-        */
+          /*
+          ========================================
+          PERMISSION CHECK
+          ========================================
+          */
 
-        if (
+          if (
             !interaction.member.roles.cache.has(
-                system.staffRole
+              system.staffRole
             )
-        ) {
+          ) {
             return interaction.editReply({
-                content:
-                    "❌ Only ticket staff can close this ticket.",
+              content:
+                "❌ Only ticket staff can close this ticket.",
             });
-        }
+          }
 
-        console.log("TICKET CLOSE: Permission OK");
+          console.log("TICKET CLOSE: Permission OK");
 
-        const ticketChannel = interaction.channel;
+          const ticketChannel = interaction.channel;
 
-        /*
-        ========================================
-        FIND CREATOR
-        ========================================
-        */
+          /*
+          ========================================
+          FIND CREATOR
+          ========================================
+          */
 
-        let creator = null;
+          let creator = null;
 
-        if (ticketChannel.topic) {
+          if (ticketChannel.topic) {
             const match = ticketChannel.topic.match(
-                /^ticket:[^:]+:(\d+)$/
+              /^ticket:[^:]+:(\d+)$/
             );
 
             if (match) {
-                creator = await client.users
-                    .fetch(match[1])
-                    .catch(() => null);
+              creator = await client.users
+                .fetch(match[1])
+                .catch(() => null);
             }
-        }
+          }
 
-        console.log(
+          console.log(
             "TICKET CLOSE: Creator:",
             creator?.tag || "Unknown"
-        );
+          );
 
-        /*
-        ========================================
-        CREATE TRANSCRIPT
-        ========================================
-        */
+          /*
+          ========================================
+          CREATE TRANSCRIPT
+          ========================================
+          */
 
-        console.log(
+          console.log(
             "TICKET CLOSE: Creating transcript..."
-        );
+          );
 
-        const transcript =
+          const transcript =
             await createTicketTranscript(
-                ticketChannel,
-                {
-                    ticketType: system.name,
-                    creator,
-                    closedBy: interaction.user,
-                }
+              ticketChannel,
+              {
+                ticketType: system.name,
+                creator,
+                closedBy: interaction.user,
+              }
             );
 
-        console.log(
+          console.log(
             "TICKET CLOSE: Transcript created"
-        );
+          );
 
-        /*
-        ========================================
-        TRANSCRIPT CHANNEL
-        ========================================
-        */
+          /*
+          ========================================
+          TRANSCRIPT CHANNEL
+          ========================================
+          */
 
-        const transcriptChannel =
+          const transcriptChannel =
             await client.channels
-                .fetch(TICKET_TRANSCRIPT_CHANNEL)
-                .catch(() => null);
+              .fetch(TICKET_TRANSCRIPT_CHANNEL)
+              .catch(() => null);
 
-        if (!transcriptChannel) {
+          if (!transcriptChannel) {
             return interaction.editReply({
-                content:
-                    "❌ Transcript channel could not be found. The ticket was NOT deleted.",
+              content:
+                "❌ Transcript channel could not be found. The ticket was NOT deleted.",
             });
-        }
+          }
 
-        console.log(
+          console.log(
             "TICKET CLOSE: Transcript channel found"
-        );
+          );
 
-        /*
-        ========================================
-        SEND TRANSCRIPT
-        ========================================
-        */
+          /*
+          ========================================
+          SEND TRANSCRIPT
+          ========================================
+          */
 
-        const transcriptEmbed =
+          const transcriptEmbed =
             new EmbedBuilder()
-                .setColor("#5865F2")
-                .setTitle("🔒 Ticket Closed")
-                .addFields(
-                    {
-                        name: "Ticket",
-                        value: `\`${ticketChannel.name}\``,
-                        inline: true,
-                    },
-                    {
-                        name: "Type",
-                        value: system.name,
-                        inline: true,
-                    },
-                    {
-                        name: "Created By",
-                        value: creator
-                            ? `<@${creator.id}>`
-                            : "Unknown",
-                        inline: true,
-                    },
-                    {
-                        name: "Closed By",
-                        value: `<@${interaction.user.id}>`,
-                        inline: true,
-                    }
-                )
-                .setTimestamp();
+              .setColor("#5865F2")
+              .setTitle("🔒 Ticket Closed")
+              .addFields(
+                {
+                  name: "Ticket",
+                  value: `\`${ticketChannel.name}\``,
+                  inline: true,
+                },
+                {
+                  name: "Type",
+                  value: system.name,
+                  inline: true,
+                },
+                {
+                  name: "Created By",
+                  value: creator
+                    ? `<@${creator.id}>`
+                    : "Unknown",
+                  inline: true,
+                },
+                {
+                  name: "Closed By",
+                  value: `<@${interaction.user.id}>`,
+                  inline: true,
+                }
+              )
+              .setTimestamp();
 
-        await transcriptChannel.send({
+          await transcriptChannel.send({
             embeds: [transcriptEmbed],
             files: [
-                {
-                    attachment: transcript,
-                    name: `${ticketChannel.name}.pdf`,
-                },
+              {
+                attachment: transcript,
+                name: `${ticketChannel.name}.pdf`,
+              },
             ],
-        });
+          });
 
-        console.log(
+          console.log(
             "TICKET CLOSE: Transcript sent"
-        );
+          );
 
-        /*
-        ========================================
-        DELETE TICKET
-        ========================================
-        */
+          /*
+          ========================================
+          DELETE TICKET
+          ========================================
+          */
 
-        await interaction.editReply({
+          await interaction.editReply({
             content:
-                "🔒 Ticket closed and transcript archived.",
-        });
+              "🔒 Ticket closed and transcript archived.",
+          });
 
-        console.log(
+          console.log(
             "TICKET CLOSE: Deleting channel..."
-        );
+          );
 
-        await ticketChannel.delete(
+          await ticketChannel.delete(
             "Ticket closed and transcript archived."
-        );
+          );
 
-    } catch (error) {
-        console.error(
+        } catch (error) {
+          console.error(
             "TICKET CLOSE ERROR:",
             error
-        );
+          );
 
-        try {
+          try {
             await interaction.editReply({
-                content:
-                    "❌ Something went wrong while closing this ticket. The ticket was NOT deleted.",
+              content:
+                "❌ Something went wrong while closing this ticket. The ticket was NOT deleted.",
             });
-        } catch (replyError) {
+          } catch (replyError) {
             console.error(
-                "FAILED TO EDIT CLOSE REPLY:",
-                replyError
+              "FAILED TO EDIT CLOSE REPLY:",
+              replyError
             );
+          }
         }
-    }
 
-      }       
+      }
       /*
 ========================================
 CONTINUE APPLICATION
@@ -886,7 +1026,7 @@ APPLICATION FINISHED
                     "❌ **There was an error submitting your application.**\n\n" +
                     "Please contact a member of SLRP Leadership and let them know what happened.",
                 })
-                .catch(() => {});
+                .catch(() => { });
             }
 
             return interaction
@@ -896,7 +1036,7 @@ APPLICATION FINISHED
                   "Please contact a member of SLRP Leadership and let them know what happened.",
                 flags: 64,
               })
-              .catch(() => {});
+              .catch(() => { });
           }
         }
 
@@ -1217,12 +1357,12 @@ ACCEPT / DENY
         try {
           await applicant.send(
             "📋 **You received a new message regarding your application.**\n\n" +
-              `**${review.applicationName} Application**\n\n` +
-              `**Result:** ${isAccepted ? "✅ ACCEPTED" : "❌ DENIED"}\n` +
-              `**Score:** ${review.score}/100\n\n` +
-              `${review.messageToApplicant}\n\n` +
-              "━━━━━━━━━━━━━━━━━━━━━━\n" +
-              "State Line Roleplay",
+            `**${review.applicationName} Application**\n\n` +
+            `**Result:** ${isAccepted ? "✅ ACCEPTED" : "❌ DENIED"}\n` +
+            `**Score:** ${review.score}/100\n\n` +
+            `${review.messageToApplicant}\n\n` +
+            "━━━━━━━━━━━━━━━━━━━━━━\n" +
+            "State Line Roleplay",
           );
         } catch (error) {
           dmSent = false;
@@ -1465,7 +1605,7 @@ ACCEPT / DENY
               "❌ An unexpected error occurred while processing this interaction.",
             flags: 64,
           })
-          .catch(() => {});
+          .catch(() => { });
       }
     }
   });
@@ -1609,7 +1749,7 @@ async function submitApplication(client, interaction, state, application) {
     .setTitle(`${application.emoji} New ${application.name} Application`)
     .setDescription(
       `A new application has been submitted by ${interaction.user}.\n\n` +
-        `👤 **Applicant Information**`,
+      `👤 **Applicant Information**`,
     )
     .setThumbnail(
       interaction.user.displayAvatarURL({
