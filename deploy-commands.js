@@ -80,33 +80,58 @@ const commands = [
         .setName("patchnote")
         .setDescription("Open the patchnote creator."),
 
-    /*
-    ANNOUNCEMENTS
-    */
     new SlashCommandBuilder()
-        .setName("session")
-        .setDescription("Manage the current roleplay session.")
+        .setName("announce")
+        .setDescription("Send a session announcement.")
         .addStringOption(option =>
             option
-                .setName("action")
-                .setDescription("Session action to perform.")
+                .setName("type")
+                .setDescription("Announcement type.")
                 .setRequired(true)
                 .addChoices(
                     {
-                        name: "🚨 Session Startup",
-                        value: "startup"
+                        name: "Session Start",
+                        value: "sessionstart"
                     },
                     {
-                        name: "🔴 Session End",
-                        value: "end"
+                        name: "Session End",
+                        value: "sessionend"
                     },
                     {
-                        name: "🚔 Public Safety On Duty",
-                        value: "ps-on"
+                        name: "Public Safety On Duty",
+                        value: "psonduty"
                     },
                     {
-                        name: "🚔 Public Safety Off Duty",
-                        value: "ps-off"
+                        name: "Public Safety Off Duty",
+                        value: "psoffduty"
+                    }
+                )
+        )
+        .addStringOption(option =>
+            option
+                .setName("session")
+                .setDescription("Session type.")
+                .setRequired(false)
+                .addChoices(
+                    {
+                        name: "FRP",
+                        value: "FRP"
+                    }
+                )
+        )
+        .addStringOption(option =>
+            option
+                .setName("peacetime")
+                .setDescription("Current peacetime status.")
+                .setRequired(false)
+                .addChoices(
+                    {
+                        name: "Strict Peacetime",
+                        value: "Strict Peacetime"
+                    },
+                    {
+                        name: "Normal Peacetime",
+                        value: "Normal Peacetime"
                     }
                 )
         ),
@@ -216,11 +241,11 @@ const commands = [
         .setName("apply-continue")
         .setDescription("Continue your saved application."),
     new SlashCommandBuilder()
-    .setName("sos")
-    .setDescription("Lock all server channels."),
+        .setName("sos")
+        .setDescription("Lock all server channels."),
     new SlashCommandBuilder()
-    .setName("unsos")
-    .setDescription("Unlock all server channels."),
+        .setName("unsos")
+        .setDescription("Unlock all server channels."),
 
 ].map(command => command.toJSON());
 

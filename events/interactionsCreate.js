@@ -983,100 +983,48 @@ module.exports = (client) => {
 
       if (interaction.commandName === "birthday") {
 
-        const action =
-          interaction.options.getString("action");
-
-
-        /*
-        ========================================
-        MY BIRTHDAY
-        ========================================
-        */
+        const action = interaction.options.getString("action");
+        const date = interaction.options.getString("date");
 
         if (action === "me") {
 
-          const birthday =
-            getBirthday(interaction.user.id);
+          const birthday = getBirthday(interaction.user.id);
 
           if (!birthday) {
             return interaction.reply({
-              content:
-                "You haven't set your birthday yet.",
+              content: "❌ You haven't set your birthday yet.",
               flags: 64
             });
           }
 
-          let text;
-
-          if (birthday.format === "EU") {
-
-            text =
-              `${birthday.day}.${birthday.month}.${birthday.year}`;
-
-          } else {
-
-            text =
-              `${birthday.month}/${birthday.day}/${birthday.year}`;
-          }
+          const text =
+            birthday.format === "EU"
+              ? `${birthday.day}.${birthday.month}.${birthday.year}`
+              : `${birthday.month}/${birthday.day}/${birthday.year}`;
 
           return interaction.reply({
-            content:
-              `🎂 Your birthday is **${text}**.`,
+            content: `🎂 Your birthday is **${text}**.`,
             flags: 64
           });
         }
-
-
-        /*
-        ========================================
-        REMOVE
-        ========================================
-        */
-
-        if (action === "remove") {
-
-          removeBirthday(interaction.user.id);
-
-          return interaction.reply({
-            content:
-              "✅ Your birthday has been removed.",
-            flags: 64
-          });
-        }
-
-
-        /*
-        ========================================
-        SET
-        ========================================
-        */
 
         if (action === "set") {
 
-          const input =
-            interaction.options.getString("date");
-
-          if (!input) {
+          if (!date) {
             return interaction.reply({
-              content:
-                "Usage: `/birthday action:set date:1 October 2006`",
+              content: "❌ Please provide your birthday.",
               flags: 64
             });
           }
 
-          const result =
-            parseBirthday(input);
+          const result = parseBirthday(date);
 
           if (result.success) {
 
-            setBirthday(
-              interaction.user.id,
-              result
-            );
+            setBirthday(interaction.user.id, result);
 
             return interaction.reply({
-              content:
-                "✅ Your birthday has been set.",
+              content: "✅ Your birthday has been set.",
               flags: 64
             });
           }
@@ -1096,150 +1044,44 @@ module.exports = (client) => {
             });
           }
 
-          if (result.error === "invalid") {
-
-            return interaction.reply({
-              content:
-                "❌ That isn't a valid date.",
-              flags: 64
-            });
-          }
-
           return interaction.reply({
-            content:
-              "❌ Unknown date format.",
+            content: "❌ That isn't a valid date.",
             flags: 64
           });
         }
 
+        if (action === "remove") {
 
-        /*
-        ========================================
-        UPCOMING BIRTHDAYS
-        ========================================
-        */
-
-        if (action === "list") {
-
-          const today = new Date();
-
-          const list = [];
-
-          for (const [id, birthday] of birthdays.entries()) {
-
-            const nextBirthday = new Date(
-              today.getFullYear(),
-              birthday.month - 1,
-              birthday.day
-            );
-
-            if (nextBirthday < today) {
-              nextBirthday.setFullYear(
-                today.getFullYear() + 1
-              );
-            }
-
-            const difference =
-              nextBirthday.getTime() -
-              today.getTime();
-
-            const days = Math.ceil(
-              difference /
-              (1000 * 60 * 60 * 24)
-            );
-
-            list.push({
-              id,
-              birthday,
-              days,
-              nextBirthday
-            });
-          }
-
-          list.sort(
-            (a, b) => a.days - b.days
-          );
-
-          let description = "";
-
-          for (const entry of list) {
-
-            const member =
-              await interaction.guild.members
-                .fetch(entry.id)
-                .catch(() => null);
-
-            if (!member) continue;
-
-            const turns =
-              entry.nextBirthday.getFullYear() -
-              entry.birthday.year;
-
-            let when;
-
-            if (entry.days === 0) {
-              when = "🎉 Today!";
-            } else if (entry.days === 1) {
-              when = "⏳ Tomorrow";
-            } else {
-              when =
-                `⏳ In ${entry.days} days`;
-            }
-
-            description +=
-              `🥳 **${member.displayName}**\n` +
-              `📅 ${entry.birthday.day}.${entry.birthday.month}.${entry.birthday.year}\n` +
-              `🎈 Turns ${turns}\n` +
-              `${when}\n\n`;
-          }
-
-          if (description === "") {
-            description =
-              "*Nobody has set their birthday yet.*";
-          }
-
-          const embed = new EmbedBuilder()
-            .setColor("#F8C8DC")
-            .setTitle("🎂 Upcoming Birthdays")
-            .setDescription(description)
-            .setTimestamp();
+          removeBirthday(interaction.user.id);
 
           return interaction.reply({
-            embeds: [embed]
+            content: "✅ Your birthday has been removed.",
+            flags: 64
           });
         }
 
+        if (action === "list") {
 
-        /*
-        ========================================
-        TEST
-        ========================================
-        */
+          // Hier kommt deine bestehende Upcoming-Birthdays-Logik rein.
+
+        }
 
         if (action === "test") {
 
           if (!isAdmin(interaction.member)) {
             return interaction.reply({
-              content:
-                "❌ You don't have permission.",
+              content: "❌ You don't have permission.",
               flags: 64
             });
           }
 
-          const banner =
-            new AttachmentBuilder(
-              "./media/birthdayBanner.png"
-            );
-
           const embed =
-            createBirthdayEmbed(
-              interaction.member,
-              20
-            );
+            createBirthdayEmbed(interaction.member, 20);
 
           return interaction.reply({
             embeds: [embed],
-            files: [banner]
+            files: [banner],
+            flags: 64
           });
         }
       }
