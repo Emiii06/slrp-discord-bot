@@ -10,6 +10,12 @@ const {
   PermissionFlagsBits,
 } = require("discord.js");
 
+const session =
+  interaction.options.getString("session");
+
+const peacetime =
+  interaction.options.getString("peacetime");
+
 const {
   birthdays,
   getBirthday,

@@ -13,6 +13,8 @@ const {
 
 const commands = [
 
+
+    
     /*
     ========================================
     CLEAR
@@ -80,30 +82,36 @@ const commands = [
         .setName("patchnote")
         .setDescription("Open the patchnote creator."),
 
+    /*
+========================================
+SESSION
+========================================
+*/
+
     new SlashCommandBuilder()
-        .setName("announce")
-        .setDescription("Send a session announcement.")
+        .setName("session")
+        .setDescription("Manage the current roleplay session.")
         .addStringOption(option =>
             option
-                .setName("type")
-                .setDescription("Announcement type.")
+                .setName("action")
+                .setDescription("Session action.")
                 .setRequired(true)
                 .addChoices(
                     {
-                        name: "Session Start",
-                        value: "sessionstart"
+                        name: "🚨 Session Start",
+                        value: "startup"
                     },
                     {
-                        name: "Session End",
-                        value: "sessionend"
+                        name: "🔴 Session End",
+                        value: "end"
                     },
                     {
-                        name: "Public Safety On Duty",
-                        value: "psonduty"
+                        name: "🚔 Public Safety On Duty",
+                        value: "ps-on"
                     },
                     {
-                        name: "Public Safety Off Duty",
-                        value: "psoffduty"
+                        name: "🚔 Public Safety Off Duty",
+                        value: "ps-off"
                     }
                 )
         )
