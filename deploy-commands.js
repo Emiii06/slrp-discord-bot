@@ -203,6 +203,7 @@ const commands = [
     new SlashCommandBuilder()
         .setName("birthday")
         .setDescription("Manage birthdays.")
+        .setDefaultMemberPermissions(null)
         .addStringOption(option =>
             option
                 .setName("action")
