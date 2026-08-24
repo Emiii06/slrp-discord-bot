@@ -1102,6 +1102,17 @@ module.exports = (client) => {
         const action =
           interaction.options.getString("action");
 
+
+        const session =
+          interaction.options.getInteger("session");
+
+        const peacetime =
+          interaction.options.getString("peacetime");
+
+        const host =
+          interaction.options.getString("host");
+
+          
         const channel = await client.channels
           .fetch(SESSION_CHANNEL)
           .catch(() => null);

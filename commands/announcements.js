@@ -55,9 +55,13 @@ module.exports = async (client, message, args, command) => {
 
         const SessionStartupembed = new EmbedBuilder()
             .setColor("#57F287")
-            .setTitle("🚨 State Line Roleplay | Session Startup")
+            .setTitle(
+                `🚨 State Line Roleplay | FRP Session #${session || "?"} Started`
+            )
             .setDescription(
-                "The roleplay session is now officially **LIVE!**\n\n" +
+                `The roleplay session **#${session || "?"}** is now officially **LIVE!**\n\n` +
+                `👤 **Host:** ${host || "Not specified"}\n` +
+                `🚦 **Peacetime:** ${peacetime || "Not specified"}\n\n` +
                 "All members are expected to follow server rules, maintain realistic roleplay, and comply with staff instructions throughout the session."
             )
             .addFields({
@@ -69,6 +73,13 @@ module.exports = async (client, message, args, command) => {
                     "👮 Follow all staff instructions\n" +
                     "🚓 LEO, 🚑 Fire/EMS, 🚧 DOT & Civilians may begin operations\n" +
                     "📻 Keep radio communications professional"
+            })
+            .addFields({
+                name: "🎮 Session Details",
+                value:
+                    `🎮 **FRP Session:** #${session || "Not specified"}\n` +
+                    `🚦 **Peacetime:** ${peacetime || "Not specified"}\n` +
+                    `👤 **Host:** ${host || "Not specified"}`
             })
             .setFooter({
                 text: "State Line Roleplay"

@@ -14,7 +14,7 @@ const {
 const commands = [
 
 
-    
+
     /*
     ========================================
     CLEAR
@@ -88,6 +88,12 @@ SESSION
 ========================================
 */
 
+    /*
+========================================
+SESSION
+========================================
+*/
+
     new SlashCommandBuilder()
         .setName("session")
         .setDescription("Manage the current roleplay session.")
@@ -115,17 +121,12 @@ SESSION
                     }
                 )
         )
-        .addStringOption(option =>
+        .addIntegerOption(option =>
             option
                 .setName("session")
-                .setDescription("Session type.")
+                .setDescription("FRP session number.")
                 .setRequired(false)
-                .addChoices(
-                    {
-                        name: "FRP",
-                        value: "FRP"
-                    }
-                )
+                .setMinValue(1)
         )
         .addStringOption(option =>
             option
@@ -142,6 +143,12 @@ SESSION
                         value: "Normal Peacetime"
                     }
                 )
+        )
+        .addStringOption(option =>
+            option
+                .setName("host")
+                .setDescription("In-game name of the host.")
+                .setRequired(false)
         ),
     new SlashCommandBuilder()
         .setName("duty")
